@@ -175,6 +175,7 @@ void wifiSetup(int resetBtnPin) {
     Serial.println("Reset button held – clearing WiFi credentials");
     wm.resetSettings();
   }
+  wm.setConnectTimeout(10);        // 10s max to join saved WiFi
   wm.setConfigPortalTimeout(180);
   if (!wm.autoConnect("LaserCounter-Setup")) {
     Serial.println("WiFi not configured – running offline");

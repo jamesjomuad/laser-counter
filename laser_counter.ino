@@ -53,6 +53,10 @@ bool running      = true;
 unsigned long lastCountTime = 0;
 int  lastSensorVal = 0;
 
+// Non-blocking buzzer state
+bool buzzerActive = false;
+unsigned long buzzerStart = 0;
+
 void updateDisplay(int val) {
   display.showNumberDec(val, 0, true);
 }
@@ -120,8 +124,8 @@ void loop() {
 
       display.showNumberDec(count, 0, true);
       digitalWrite(BUZZER_PIN, HIGH);
-      delay(BEEP_MS);
-      digitalWrite(BUZZER_PIN, LOW);
+      buzzerActive = true;
+      buzzerStart = millis();
       char logMsg[40];
       snprintf(logMsg, sizeof(logMsg), "Count: %d (sensor: %d)", count, sensorVal);
       Serial.println(logMsg);
@@ -132,6 +136,12 @@ void loop() {
 
   if (!currentlyBroken) {
     beamBroken = false;   // beam restored, ready for next object
+  }
+
+  // ── Non-blocking buzzer off ──────────────────────────────────
+  if (buzzerActive && (millis() - buzzerStart >= BEEP_MS)) {
+    digitalWrite(BUZZER_PIN, LOW);
+    buzzerActive = false;
   }
 
   // Debug: print raw sensor value every 500 ms (comment out when tuned)
