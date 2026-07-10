@@ -79,7 +79,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
     <div class="log" id="log"></div>
   </div>
   <div class="ip" id="ip"></div>
-  <div style="margin-top:12px; font-size:0.7rem; color:#334155;">Developed by James</div>
+  <div style="margin-top:12px; font-size:0.7rem; color:#334155;">Developed by James Jomuad</div>
 </div>
 <script>
 function poll(){
@@ -88,8 +88,8 @@ function poll(){
     document.getElementById("s").textContent=d.sensor;
     document.getElementById("b").style.width=(d.sensor/1023*100)+"%";
     const st=document.getElementById("st");
-    if(d.beam_broken){st.textContent="BEAM BROKEN";st.className="beam broken";}
-    else{st.textContent="BEAM OK";st.className="beam ok";}
+    if(d.beam_broken){st.textContent="SENSOR BROKEN";st.className="beam broken";}
+    else{st.textContent="SENSOR OK";st.className="beam ok";}
     const tb=document.getElementById("tb");
     if(d.running){tb.textContent="Stop";tb.style.background="#ef4444";}
     else{tb.textContent="Start";tb.style.background="#22c55e";}
