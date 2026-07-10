@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 780" width="900" height="780">
+  <style>
+    .chip { fill: #fafafa; stroke: #333; stroke-width: 2.5; }
+    .pin-rect { fill: #ddd; stroke: #333; stroke-width: 1; }
+    .wire { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .red { stroke: #c0392b; }
+    .blk { stroke: #2c3e50; }
+    .blu { stroke: #2980b9; }
+    .grn { stroke: #27ae60; }
+    .org { stroke: #e67e22; }
+    .gry { stroke: #7f8c8d; }
+    .pur { stroke: #8e44ad; }
+    .title { font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; fill: #2c3e50; }
+    .sub { font-family: Arial, sans-serif; font-size: 13px; fill: #555; }
+    .t14 { font-family: Arial, sans-serif; font-size: 14px; fill: #2c3e50; font-weight: bold; }
+    .t12 { font-family: Arial, sans-serif; font-size: 12px; fill: #444; }
+    .t11 { font-family: Arial, sans-serif; font-size: 11px; fill: #555; }
+    .t10 { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+    .mono { font-family: 'Courier New', monospace; font-size: 12px; fill: #c0392b; font-weight: bold; }
+    .mono-blk { font-family: 'Courier New', monospace; font-size: 12px; fill: #2c3e50; font-weight: bold; }
+    .mono-blu { font-family: 'Courier New', monospace; font-size: 12px; fill: #2980b9; font-weight: bold; }
+    .dot { fill: #333; }
+    .box { rx: 4; stroke-width: 1.5; }
+    .box-res { fill: #fff3e0; stroke: #e67e22; }
+    .box-cap { fill: #e8f4f8; stroke: #2980b9; }
+    .box-good { fill: #ecfdf5; stroke: #059669; stroke-width: 2; }
+    .box-info { fill: #fafafa; stroke: #ccc; stroke-width: 1; }
+    .box-yellow { fill: #fff9e6; stroke: #f1c40f; stroke-width: 1.5; }
+    .badge { fill: #059669; stroke: none; }
+    .badge-text { font-family: Arial, sans-serif; font-size: 11px; fill: #fff; font-weight: bold; }
+    .waveform { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+
+  <!-- Title -->
+  <text x="450" y="32" text-anchor="middle" class="title">TLC555CP — Astable Multivibrator (~2.15 kHz)</text>
+  <text x="450" y="52" text-anchor="middle" class="sub">CMOS 555 Timer — <tspan fill="#059669" font-weight="bold">compatible</tspan> with 3.3 V NodeMCU power (2.0–15 V range)</text>
+
+  <rect x="200" y="65" width="500" height="26" rx="5" class="badge"/>
+  <text x="450" y="83" text-anchor="middle" class="badge-text">✓ RECOMMENDED — works from 2.0 V, pin-compatible DIP-8, ~210 µA supply current</text>
+
+  <!-- ====== TOP: VCC RAIL (3V3 from NodeMCU) ====== -->
+  <line x1="30" y1="120" x2="310" y2="120" class="wire red"/>
+  <text x="20" y="125" text-anchor="end" class="mono" fill="#c0392b">3V3</text>
+  <text x="25" y="140" text-anchor="end" class="t10" fill="#059669">from NodeMCU</text>
+
+  <!-- ====== BOTTOM: GND RAIL ====== -->
+  <line x1="30" y1="530" x2="460" y2="530" class="wire blk"/>
+  <text x="20" y="534" text-anchor="end" class="mono-blk">GND</text>
+
+  <!-- ====== TLC555 CHIP ====== -->
+  <rect x="160" y="150" width="150" height="190" rx="5" class="chip"/>
+
+  <circle cx="178" cy="167" r="5" fill="#333"/>
+
+  <text x="235" y="200" text-anchor="middle" class="t14">TLC555CP</text>
+  <text x="235" y="218" text-anchor="middle" class="t10">CMOS 555 Timer</text>
+
+  <text x="238" y="255" text-anchor="middle" class="t10">1 2 3 4</text>
+  <text x="238" y="295" text-anchor="middle" class="t10">8 7 6 5</text>
+
+  <!-- ==== LEFT PINS ==== -->
+  <rect x="148" y="165" width="18" height="14" class="pin-rect"/>
+  <text x="140" y="176" text-anchor="end" class="t11">GND (1)</text>
+
+  <rect x="148" y="187" width="18" height="14" class="pin-rect"/>
+  <text x="140" y="198" text-anchor="end" class="t11">TRIG (2)</text>
+
+  <rect x="148" y="209" width="18" height="14" class="pin-rect"/>
+  <text x="140" y="220" text-anchor="end" class="t11">OUT (3)</text>
+
+  <rect x="148" y="231" width="18" height="14" class="pin-rect"/>
+  <text x="140" y="242" text-anchor="end" class="t11">RESET (4)</text>
+
+  <!-- ==== RIGHT PINS ==== -->
+  <rect x="304" y="165" width="18" height="14" class="pin-rect"/>
+  <text x="332" y="176" class="t11">CTRL (5)</text>
+
+  <rect x="304" y="187" width="18" height="14" class="pin-rect"/>
+  <text x="332" y="198" class="t11">THRESH (6)</text>
+
+  <rect x="304" y="209" width="18" height="14" class="pin-rect"/>
+  <text x="332" y="220" class="t11">DISCH (7)</text>
+
+  <rect x="304" y="231" width="18" height="14" class="pin-rect"/>
+  <text x="332" y="242" class="t11">VCC (8)</text>
+
+  <!-- ====== CHIP WIRING ====== -->
+
+  <!-- Pin 8 VCC → VCC rail -->
+  <line x1="310" y1="238" x2="310" y2="120" class="wire red"/>
+
+  <!-- Pin 1 GND → GND rail -->
+  <line x1="160" y1="172" x2="160" y2="530" class="wire blk"/>
+
+  <!-- Pin 4 RESET → VCC (tie high) -->
+  <line x1="157" y1="238" x2="125" y2="238" class="wire red"/>
+  <line x1="125" y1="238" x2="125" y2="120" class="wire red"/>
+  <circle cx="125" cy="120" r="3.5" class="dot"/>
+
+  <!-- Pin 5 CTRL → 10nF bypass → GND -->
+  <line x1="322" y1="172" x2="460" y2="172" class="wire gry"/>
+  <rect x="460" y="157" width="35" height="30" rx="3" fill="#e8f4f8" stroke="#7f8c8d" stroke-width="1.5"/>
+  <text x="477" y="173" text-anchor="middle" class="mono" fill="#7f8c8d">10nF</text>
+  <text x="477" y="185" text-anchor="middle" class="t10">bypass</text>
+  <line x1="477" y1="187" x2="477" y2="530" class="wire blk"/>
+
+  <!-- ====== TIMING NETWORK: R1, R2, Ct below chip ====== -->
+
+  <!-- Pin 7 DISCH → down to junction -->
+  <line x1="310" y1="216" x2="310" y2="330" class="wire org"/>
+  <circle cx="310" cy="330" r="4" class="dot"/>
+
+  <!-- R1: junction → left → up to VCC -->
+  <line x1="310" y1="330" x2="200" y2="330" class="wire org"/>
+  <line x1="200" y1="330" x2="200" y2="120" class="wire org"/>
+  <circle cx="200" cy="120" r="3.5" class="dot"/>
+
+  <rect x="195" y="280" width="50" height="25" rx="3" class="box box-res"/>
+  <text x="220" y="296" text-anchor="middle" class="t11">R1</text>
+  <text x="220" y="310" text-anchor="middle" class="mono">1 kΩ</text>
+
+  <!-- R2: junction → right → down to THRESH/TRIG -->
+  <line x1="310" y1="330" x2="370" y2="330" class="wire org"/>
+
+  <rect x="370" y="280" width="50" height="25" rx="3" class="box box-res"/>
+  <text x="395" y="296" text-anchor="middle" class="t11">R2</text>
+  <text x="395" y="310" text-anchor="middle" class="mono">33 kΩ</text>
+
+  <!-- THRESH + TRIG tied together → down to Ct -->
+  <line x1="310" y1="194" x2="310" y2="390" class="wire blu"/>
+  <line x1="157" y1="194" x2="157" y2="390" class="wire blu"/>
+  <line x1="157" y1="390" x2="310" y2="390" class="wire blu"/>
+  <circle cx="310" cy="390" r="4" class="dot"/>
+
+  <!-- R2 output end to THRESH/TRIG junction -->
+  <line x1="420" y1="330" x2="420" y2="390" class="wire org"/>
+  <line x1="310" y1="390" x2="420" y2="390" class="wire org"/>
+  <circle cx="420" cy="390" r="3.5" class="dot"/>
+
+  <!-- Ct: junction → GND -->
+  <line x1="310" y1="390" x2="310" y2="480" class="wire blu"/>
+
+  <rect x="292" y="435" width="50" height="25" rx="3" class="box box-cap"/>
+  <text x="317" y="451" text-anchor="middle" class="t11">Ct</text>
+  <text x="317" y="465" text-anchor="middle" class="mono-blu">10 nF</text>
+
+  <line x1="317" y1="460" x2="317" y2="530" class="wire blk"/>
+
+  <!-- ====== OUTPUT PATH: Pin 3 → Cb → Rs → SENSE → Electrode A ====== -->
+
+  <line x1="148" y1="216" x2="55" y2="216" class="wire grn"/>
+
+  <!-- Cb coupling cap -->
+  <line x1="55" y1="216" x2="55" y2="365" class="wire grn"/>
+
+  <rect x="35" y="365" width="40" height="25" rx="3" class="box box-cap"/>
+  <text x="55" y="381" text-anchor="middle" class="t11">Cb</text>
+  <text x="55" y="394" text-anchor="middle" class="mono-blu">1 µF</text>
+
+  <!-- DC-block annotation -->
+  <text x="75" y="360" class="t10" fill="#2980b9">DC-block</text>
+
+  <!-- Rs trimpot below Cb -->
+  <line x1="55" y1="390" x2="55" y2="455" class="wire grn"/>
+
+  <rect x="30" y="455" width="50" height="25" rx="3" class="box box-res"/>
+  <text x="55" y="471" text-anchor="middle" class="t11">Rs</text>
+  <text x="55" y="485" text-anchor="middle" class="mono">10 kΩ</text>
+  <text x="85" y="478" class="t10" fill="#e67e22">trimpot</text>
+
+  <!-- Rs to GND -->
+  <line x1="55" y1="480" x2="55" y2="530" class="wire blk"/>
+
+  <!-- SENSE node -->
+  <text x="195" y="445" class="t11" fill="#27ae60" font-weight="bold">SENSE node</text>
+  <circle cx="230" cy="440" r="5" fill="#27ae60"/>
+
+  <!-- SENSE to electrode A -->
+  <line x1="235" y1="440" x2="290" y2="440" class="wire grn"/>
+
+  <!-- ====== ELECTRODE ASSEMBLY ====== -->
+
+  <rect x="290" y="390" width="250" height="100" rx="6" fill="#f4fafd" stroke="#2980b9" stroke-width="2" stroke-dasharray="6,3"/>
+  <text x="415" y="413" text-anchor="middle" class="t11">12 mm ID Transfer Tube</text>
+
+  <!-- Electrode A -->
+  <rect x="305" y="400" width="14" height="60" rx="2" fill="#bdc3c7" stroke="#555" stroke-width="1.5"/>
+  <text x="312" y="468" text-anchor="middle" class="t10">SS</text>
+  <text x="312" y="478" text-anchor="middle" class="t10">A</text>
+
+  <!-- Electrode B -->
+  <rect x="510" y="400" width="14" height="60" rx="2" fill="#bdc3c7" stroke="#555" stroke-width="1.5"/>
+  <text x="517" y="468" text-anchor="middle" class="t10">SS</text>
+  <text x="517" y="478" text-anchor="middle" class="t10">B</text>
+
+  <text x="415" y="440" text-anchor="middle" class="mono-blu">~10 mm gap</text>
+  <text x="415" y="454" text-anchor="middle" class="t10">water + fingerling</text>
+
+  <!-- AC field -->
+  <path d="M 319 425 Q 415 410 510 425" fill="none" stroke="#e67e22" stroke-width="1.3"/>
+  <path d="M 319 435 Q 415 420 510 435" fill="none" stroke="#e67e22" stroke-width="1.3"/>
+
+  <!-- Electrode B → Cb2 → GND -->
+  <line x1="524" y1="440" x2="580" y2="440" class="wire blk"/>
+  <rect x="580" y="425" width="32" height="22" rx="3" class="box box-cap"/>
+  <text x="596" y="440" text-anchor="middle" class="t11">Cb</text>
+  <text x="596" y="452" text-anchor="middle" class="mono-blu">1µF</text>
+  <line x1="612" y1="436" x2="630" y2="436" class="wire blk"/>
+  <line x1="630" y1="436" x2="630" y2="530" class="wire blk"/>
+
+  <!-- ====== RIGHT PANEL: Waveforms ====== -->
+
+  <rect x="650" y="105" width="220" height="470" rx="5" class="box box-info"/>
+  <text x="760" y="128" text-anchor="middle" class="t12">Waveforms</text>
+
+  <!-- Ct voltage -->
+  <text x="660" y="152" class="t10">Ct (pins 2,6):</text>
+
+  <line x1="660" y1="168" x2="860" y2="168" class="wire gry" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="862" y="171" class="t10" fill="#e67e22">2/3 VCC</text>
+  <line x1="660" y1="185" x2="860" y2="185" class="wire gry" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="862" y="188" class="t10" fill="#e67e22">1/3 VCC</text>
+
+  <polyline class="waveform" stroke="#2980b9" fill="none"
+    points="660,195 675,195 685,175 695,175 705,195 715,195 725,175 735,175 745,195 755,195 765,175 775,175 785,195 795,195 805,175 815,175 825,195 835,195 845,175 855,175"/>
+  <polyline class="waveform" stroke="#2980b9" fill="none"
+    points="660,195 670,195 680,175 690,175 700,195 710,195 720,175 730,175 740,195 750,195 760,175 770,175 780,195 790,195 800,175 810,175 820,195 830,195 840,175 850,175"/>
+
+  <!-- OUT square -->
+  <text x="660" y="220" class="t10">OUT (pin 3):</text>
+
+  <polyline class="waveform" stroke="#c0392b" fill="none" stroke-width="2"
+    points="660,242 675,242 675,232 685,232 685,242 695,242 695,232 705,232 705,242 715,242 715,232 725,232 725,242 735,242 735,232 745,232 745,242 755,242 755,232 765,232 765,242 775,242 775,232 785,232 785,242 795,242 795,232 805,232 805,242 815,242 815,232 825,232 825,242 835,242 835,232 845,232 845,242 855,242"/>
+
+  <text x="655" y="232" class="t10" fill="#c0392b">3V3</text>
+  <text x="655" y="250" class="t10" fill="#2c3e50">GND</text>
+
+  <!-- AC-coupled after Cb -->
+  <text x="660" y="275" class="t10">After Cb (electrode A):</text>
+  <text x="660" y="288" class="t10" fill="#8e44ad">AC-coupled, ±1.65 V</text>
+
+  <polyline class="waveform" stroke="#8e44ad" fill="none" stroke-width="1.8"
+    points="660,310 675,310 675,300 685,290 685,300 695,310 695,310 705,310 705,300 715,290 715,300 725,310 725,310 735,310 735,300 745,290 745,300 755,310 755,310 765,310 765,300 775,290 775,300 785,310 785,310 795,310 795,300 805,290 805,300 815,310 815,310 825,310 825,300 835,290 835,300 845,310 845,310 855,310"/>
+
+  <text x="655" y="298" class="t10" fill="#8e44ad">+1.65V</text>
+  <text x="655" y="320" class="t10" fill="#2c3e50">-1.65V</text>
+
+  <!-- SENSE envelope -->
+  <text x="660" y="348" class="t10">SENSE (envelope, → A0):</text>
+  <text x="660" y="360" class="t10" fill="#27ae60">DC level after BAT43 rectifier</text>
+
+  <polyline class="waveform" stroke="#27ae60" fill="none" stroke-width="2"
+    points="660,380 672,388 685,395 698,395 710,388 722,380 735,388 747,395 760,395 772,388 785,380 797,388 810,395 822,395 835,388 847,380"/>
+
+  <!-- Fish event -->
+  <text x="660" y="420" class="t10" fill="#27ae60">Clear water: steady level</text>
+  <text x="660" y="435" class="mono" fill="#c0392b" font-size="10">Fish enters: level shifts</text>
+  <text x="660" y="450" class="t10" fill="#c0392b">|deviation| > DETECT_DELTA → count!</text>
+
+  <!-- Arrow to fish event -->
+  <path d="M 745 370 L 745 390 L 770 390" fill="none" stroke="#c0392b" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Envelope detector label -->
+  <text x="660" y="478" class="t10">↓ To BAT43 envelope detector ↓</text>
+  <text x="660" y="493" class="t10">↓ To MCP6002 buffer ↓</text>
+  <text x="660" y="508" class="t10">↓ To NodeMCU A0 (analog) ↓</text>
+
+  <!-- ====== BOTTOM: Formula + Notes ====== -->
+
+  <rect x="30" y="570" width="840" height="50" rx="5" class="box box-info"/>
+  <text x="450" y="590" text-anchor="middle" class="t12">Astable Frequency (CMOS 555)</text>
+  <text x="450" y="608" text-anchor="middle" class="mono-blu">f = 1.44 / ((R1 + 2*R2) * Ct) = 1.44 / ((1k + 2*33k) * 10nF) ≈ 2.15 kHz  |  Duty cycle ≈ 50.7%</text>
+
+  <rect x="30" y="635" width="840" height="125" rx="5" class="box box-yellow"/>
+  <text x="45" y="658" class="t11" font-weight="bold">Notes for beginners:</text>
+  <text x="45" y="678" class="t10">• The TLC555CP is a CMOS 555 — it uses MOSFETs internally and works from <tspan font-weight="bold" fill="#059669">2.0 V to 15 V</tspan>. The NodeMCU's 3.3 V rail is perfectly fine.</text>
+  <text x="45" y="694" class="t10">• R1 (1 kΩ) is kept small so the DISCH pin can pull Ct to ground cleanly. R2 (33 kΩ) sets the charge time along with Ct.</text>
+  <text x="45" y="710" class="t10">• The two 1 µF Cb caps block DC current through the water — this prevents electrolysis and corrosion on the stainless steel electrodes.</text>
+  <text x="45" y="726" class="t10">• A fingerling passing through the 10 mm gap changes the water resistance, which modulates the AC amplitude at SENSE. The BAT43 + RC network rectifies this into</text>
+  <text x="52" y="742" class="t10">a DC envelope. The MCP6002 buffers it into A0, where the firmware detects the >DETECT_DELTA deviation from baseline and increments the fish count.</text>
+
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+</svg>
