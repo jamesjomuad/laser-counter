@@ -121,6 +121,15 @@ void loop() {
     delay(300);   // simple button debounce
   }
 
+  // ── Serial commands ────────────────────────────────────────
+  if (Serial.available()) {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+    if (cmd.equalsIgnoreCase("RESETWIFI") || cmd.equalsIgnoreCase("CLEARWIFI")) {
+      clearWifiSettings();
+    }
+  }
+
   // ── Handle web clients ──────────────────────────────────────
   server.handleClient();
 

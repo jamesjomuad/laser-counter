@@ -37,7 +37,7 @@ The `.ino` compiles together with `wifi_dashboard.cpp` automatically; no separat
 Power: LM2596 buck set to 5 V → NodeMCU VIN. TLC555 + MCP6002 run from NodeMCU 3V3.
 
 ## Key runtime behavior
-- On first boot WiFiManager creates AP `LaserCounter-Setup`; credentials persist in flash.
+- On first boot WiFiManager creates AP `FishCounter-Setup`; credentials persist in flash.
 - Holding the reset button at boot clears saved WiFi credentials.
 - Detection is `|reading − baseline| > DETECT_DELTA` in either direction; the baseline self-calibrates when the gate is clear.
 - Dashboard at `http://<device-ip>/`; APIs: `GET /api/status`, `POST /api/toggle`, `POST /api/reset`, `GET /api/logs`.

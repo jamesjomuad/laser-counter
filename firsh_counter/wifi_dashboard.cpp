@@ -33,7 +33,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Laser Counter</title>
+<title>Fish Counter</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:-apple-system,sans-serif; background:#0f172a; color:#e2e8f0;
@@ -65,7 +65,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
 </head>
 <body>
 <div class="card">
-  <h1>Laser Counter</h1>
+  <h1>Fish Counter</h1>
   <div class="count" id="c">--</div>
   <div class="sensor">Sensor: <span id="s">--</span> / 1023</div>
   <div class="bar-bg"><div class="bar" id="b" style="width:0%"></div></div>
@@ -79,6 +79,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
     <div class="log" id="log"></div>
   </div>
   <div class="ip" id="ip"></div>
+  <div style="margin-top:12px; font-size:0.7rem; color:#334155;">Developed by James</div>
 </div>
 <script>
 function poll(){
@@ -168,6 +169,15 @@ static void handleLogs() {
   server.send(200, "application/json", json);
 }
 
+void clearWifiSettings() {
+  WiFiManager wm;
+  wm.resetSettings();
+  Serial.println("WiFi credentials cleared. Restarting...");
+  addLog("WiFi credentials cleared via serial — restarting");
+  delay(1000);
+  ESP.restart();
+}
+
 // ── Public functions ──────────────────────────────────────────
 void wifiSetup(int resetBtnPin) {
   WiFiManager wm;
@@ -177,7 +187,8 @@ void wifiSetup(int resetBtnPin) {
   }
   wm.setConnectTimeout(10);        // 10s max to join saved WiFi
   wm.setConfigPortalTimeout(180);
-  if (!wm.autoConnect("LaserCounter-Setup")) {
+  wm.setCaptivePortalEnable(false); // serve custom dashboard at 192.168.4.1
+  if (!wm.autoConnect("FishCounter-Setup")) {
     Serial.println("WiFi not configured – running offline");
   } else {
     Serial.print("Connected! IP: ");
