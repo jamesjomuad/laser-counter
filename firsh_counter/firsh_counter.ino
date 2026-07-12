@@ -74,7 +74,7 @@ bool buzzerActive = false;
 unsigned long buzzerStart = 0;
 
 void updateDisplay(int val) {
-  display.showNumberDec(val, 0, true);
+  display.showNumberDec(val, true, 4);
 }
 
 // ── Setup ─────────────────────────────────────────────────────
@@ -87,7 +87,7 @@ void setup() {
   digitalWrite(BUZZER_PIN, LOW);
 
   display.setBrightness(7);       // 0 (dim) – 7 (brightest)
-  display.showNumberDec(0, 0, true);   // show "0000" on boot
+  display.showNumberDec(0, true, 4);   // show "0000" on boot
 
   // Seed the baseline with the current clear-water reading
   baseline = analogRead(SENSOR_PIN);
@@ -113,9 +113,9 @@ void loop() {
   }
 
   // ── Reset button ──────────────────────────────────────────
-  if (digitalRead(RESET_BTN) == LOW) {
+    if (digitalRead(RESET_BTN) == LOW) {
     count = 0;
-    display.showNumberDec(count, 0, true);
+    display.showNumberDec(count, true, 4);
     Serial.println("Count reset to 0");
     addLog("Count reset (button)");
     delay(300);   // simple button debounce
@@ -127,6 +127,16 @@ void loop() {
     cmd.trim();
     if (cmd.equalsIgnoreCase("RESETWIFI") || cmd.equalsIgnoreCase("CLEARWIFI")) {
       clearWifiSettings();
+    } else if (cmd.startsWith("ADD")) {
+      int n = cmd.substring(3).toInt();
+      if (n < 1) n = 1;
+      count += n;
+      if (count > 9999) count = 0;
+      display.showNumberDec(count, true, 4);
+      char logMsg[32];
+      snprintf(logMsg, sizeof(logMsg), "Add %d -> count %d", n, count);
+      Serial.println(logMsg);
+      addLog(logMsg);
     }
   }
 
@@ -153,7 +163,7 @@ void loop() {
       // Cap at 9999 for 4-digit display
       if (count > 9999) count = 0;
 
-      display.showNumberDec(count, 0, true);
+      display.showNumberDec(count, true, 4);
       digitalWrite(BUZZER_PIN, HIGH);
       buzzerActive = true;
       buzzerStart = millis();

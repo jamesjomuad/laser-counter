@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fish Counter — Documentation</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+         background:#0f172a; color:#e2e8f0; line-height:1.6;
+         display:flex; justify-content:center; padding:40px 20px; }
+  .wrap { max-width:800px; width:100%; }
+  h1 { font-size:2rem; font-weight:700; color:#38bdf8; margin-bottom:4px; }
+  .subtitle { color:#64748b; font-size:0.95rem; margin-bottom:32px; }
+  h2 { font-size:1.1rem; color:#94a3b8; text-transform:uppercase; letter-spacing:1.5px;
+       margin:32px 0 12px; }
+  .cards { display:flex; flex-direction:column; gap:8px; }
+  .card { background:#1e293b; border-radius:10px; padding:14px 18px;
+          transition:background .15s; display:flex; align-items:center;
+          justify-content:space-between; gap:12px; text-decoration:none; color:inherit; }
+  .card:hover { background:#334155; }
+  .card .title { color:#e2e8f0; font-weight:500; }
+  .card:hover .title { color:#38bdf8; }
+  .card .desc { color:#64748b; font-size:0.85rem; }
+  .card .badge { font-size:0.7rem; padding:2px 8px; border-radius:999px;
+                 white-space:nowrap; flex-shrink:0; }
+  .badge-md { background:#1e3a5f; color:#60a5fa; }
+  .badge-svg { background:#3b2f1e; color:#fbbf24; }
+  .badge-img { background:#3b1e2e; color:#f472b6; }
+  .badge-dia { background:#1e3b2e; color:#34d399; }
+  .badge-ext { background:#3b2e2e; color:#fca5a5; }
+  .footer { margin-top:48px; padding-top:20px; border-top:1px solid #1e293b;
+            font-size:0.8rem; color:#475569; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Fish Counter</h1>
+  <p class="subtitle">ESP8266 / NodeMCU — Resistivity Gate Tilapia Fingerling Counter</p>
+
+  <h2>Sensor &amp; Hardware Design</h2>
+  <div class="cards">
+    <a class="card" href="diagrams/resistivity_sensor.md">
+      <div>
+        <div class="title">Resistivity Sensor Design</div>
+        <div class="desc">TLC555 AC drive, electrodes, envelope detector, MCP6002 buffer, BOM</div>
+      </div>
+      <span class="badge badge-md">Markdown</span>
+    </a>
+    <a class="card" href="diagrams/pins.md">
+      <div>
+        <div class="title">Pin Map &amp; Wiring</div>
+        <div class="desc">NodeMCU pin assignments, ASCII wiring diagram, power layout</div>
+      </div>
+      <span class="badge badge-md">Markdown</span>
+    </a>
+    <a class="card" href="tlc555_circuit_diagrams.md">
+      <div>
+        <div class="title">TLC555 Circuit References</div>
+        <div class="desc">External GitHub repos, datasheets, and related conductivity projects</div>
+      </div>
+      <span class="badge badge-md">Markdown</span>
+    </a>
+    <a class="card" href="SHOPPING_LIST.md">
+      <div>
+        <div class="title">Shopping Checklist</div>
+        <div class="desc">Must-have components, useful add-ons, and what NOT to buy</div>
+      </div>
+      <span class="badge badge-md">Markdown</span>
+    </a>
+  </div>
+
+  <h2>Circuit Diagrams</h2>
+  <div class="cards">
+    <a class="card" href="diagrams/tlc555_astable_v2.svg">
+      <div>
+        <div class="title">TLC555 Astable Drive (v2)</div>
+        <div class="desc">Revised conductivity gate AC drive circuit</div>
+      </div>
+      <span class="badge badge-svg">SVG</span>
+    </a>
+    <a class="card" href="diagrams/tlc555_astable.svg">
+      <div>
+        <div class="title">TLC555 Astable Drive (v1)</div>
+        <div class="desc">Original version of the astable circuit</div>
+      </div>
+      <span class="badge badge-svg">SVG</span>
+    </a>
+    <a class="card" href="diagrams/ne555_astable.svg">
+      <div>
+        <div class="title">NE555 Astable Reference</div>
+        <div class="desc">Standard NE555 astable circuit (for reference only)</div>
+      </div>
+      <span class="badge badge-svg">SVG</span>
+    </a>
+    <a class="card" href="diagrams/wiring_diagram.svg">
+      <div>
+        <div class="title">Full Wiring Diagram</div>
+        <div class="desc">System-level wiring diagram (SVG)</div>
+      </div>
+      <span class="badge badge-svg">SVG</span>
+    </a>
+  </div>
+
+  <h2>Photos</h2>
+  <div class="cards">
+    <a class="card" href="diagrams/tlc555.jpg">
+      <div>
+        <div class="title">TLC555 Build Photo</div>
+        <div class="desc">Photo of the built TLC555 circuit on breadboard</div>
+      </div>
+      <span class="badge badge-img">JPG</span>
+    </a>
+    <a class="card" href="diagrams/Monosnap%20wiring_diagram.svg%20-%20Google%20Chrome%202026-0.jpg">
+      <div>
+        <div class="title">Wiring Diagram Screenshot</div>
+        <div class="desc">Screenshot of the wiring diagram in browser</div>
+      </div>
+      <span class="badge badge-img">JPG</span>
+    </a>
+    <a class="card" href="diagrams/coqui.png">
+      <div>
+        <div class="title">Coqui</div>
+        <div class="desc">Project mascot / reference image</div>
+      </div>
+      <span class="badge badge-img">PNG</span>
+    </a>
+  </div>
+
+  <h2>Firmware</h2>
+  <div class="cards">
+    <a class="card" href="../firsh_counter/firsh_counter.ino">
+      <div>
+        <div class="title">Main Sketch (.ino)</div>
+        <div class="desc">Sensor loop, display, buzzer, button handling, detection logic</div>
+      </div>
+      <span class="badge badge-dia">Arduino</span>
+    </a>
+    <a class="card" href="../firsh_counter/wifi_dashboard.h">
+      <div>
+        <div class="title">WiFi Dashboard Header</div>
+        <div class="desc">Web dashboard and API interface declarations</div>
+      </div>
+      <span class="badge badge-dia">Header</span>
+    </a>
+    <a class="card" href="../firsh_counter/wifi_dashboard.cpp">
+      <div>
+        <div class="title">WiFi Dashboard Implementation</div>
+        <div class="desc">WiFiManager, captive portal, web UI, REST API handlers, log buffer</div>
+      </div>
+      <span class="badge badge-dia">C++</span>
+    </a>
+  </div>
+
+  <h2>External Resources</h2>
+  <div class="cards">
+    <a class="card" href="https://www.ti.com/lit/ds/symlink/tlc555.pdf" target="_blank" rel="noopener">
+      <div>
+        <div class="title">TLC555 Datasheet (TI)</div>
+        <div class="desc">Official Texas Instruments datasheet</div>
+      </div>
+      <span class="badge badge-ext">PDF</span>
+    </a>
+    <a class="card" href="https://github.com/OpenWaterProject/riffle_328-conductivity" target="_blank" rel="noopener">
+      <div>
+        <div class="title">OpenWaterProject — Conductivity Sensor</div>
+        <div class="desc">DIY conductivity sensor with 555-based AC drive (closest reference project)</div>
+      </div>
+      <span class="badge badge-ext">GitHub</span>
+    </a>
+    <a class="card" href="https://github.com/wvmarle/Arduino_ECSensor" target="_blank" rel="noopener">
+      <div>
+        <div class="title">Arduino EC Sensor Library</div>
+        <div class="desc">Simple EC sensor library, freshwater fish range</div>
+      </div>
+      <span class="badge badge-ext">GitHub</span>
+    </a>
+    <a class="card" href="https://github.com/jbates35/fishCenS" target="_blank" rel="noopener">
+      <div>
+        <div class="title">fishCenS — Fish Counting System</div>
+        <div class="desc">Related fish counting project (salmon upstream tracking)</div>
+      </div>
+      <span class="badge badge-ext">GitHub</span>
+    </a>
+  </div>
+
+  <div class="footer">
+    Fish Counter &mdash; Developed by James Jomuad
+  </div>
+</div>
+</body>
+</html>
