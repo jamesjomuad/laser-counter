@@ -87,7 +87,12 @@ void setup() {
   digitalWrite(BUZZER_PIN, LOW);
 
   display.setBrightness(7);       // 0 (dim) – 7 (brightest)
-  display.showNumberDec(0, true, 4);   // show "0000" on boot
+
+  // ── Boot countdown ──────────────────────────────────────────
+  for (int i = 8; i >= 0; i--) {
+    display.showNumberDec(i * 1111, false, 4);
+    delay(400);
+  }
 
   // Seed the baseline with the current clear-water reading
   baseline = analogRead(SENSOR_PIN);

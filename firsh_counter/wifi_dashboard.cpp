@@ -34,6 +34,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fish Counter</title>
+<link href="https://fonts.cdnfonts.com/css/digital-7-mono" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:-apple-system,sans-serif; background:#0f172a; color:#e2e8f0;
@@ -42,7 +43,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
           box-shadow:0 8px 32px rgba(0,0,0,.4); min-width:300px; }
   h1 { font-size:1.2rem; color:#94a3b8; margin-bottom:24px; letter-spacing:2px;
        text-transform:uppercase; }
-  .count { font-size:5rem; font-weight:700; color:#38bdf8; font-variant-numeric:tabular-nums; }
+  .count { font-family:'Digital-7 Mono','Digital-7',monospace; font-size:5rem; font-weight:400; color:#38bdf8; letter-spacing:4px; font-variant-numeric:tabular-nums; }
   .sensor { margin-top:20px; font-size:0.9rem; color:#64748b; }
   .bar-bg { margin-top:8px; height:6px; background:#334155; border-radius:3px; overflow:hidden; }
   .bar { height:100%; background:#38bdf8; border-radius:3px; transition:width .3s; }
