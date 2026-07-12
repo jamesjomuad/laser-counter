@@ -41,6 +41,7 @@ Power: LM2596 buck set to 5 V → NodeMCU VIN. TLC555 + MCP6002 run from NodeMCU
 - Holding the reset button at boot clears saved WiFi credentials.
 - Detection is `|reading − baseline| > DETECT_DELTA` in either direction; the baseline self-calibrates when the gate is clear.
 - Dashboard at `http://<device-ip>/`; APIs: `GET /api/status`, `POST /api/toggle`, `POST /api/reset`, `GET /api/logs`.
+- After the boot countdown, the TM1637 display cycles through each IP octet twice (e.g. `192.` `168.` `  1.` `100`) before showing the count. If WiFi isn't connected, it skips straight to the count.
 
 ## Key constants (in `laser_counter.ino`)
 | Constant | Value | Purpose |

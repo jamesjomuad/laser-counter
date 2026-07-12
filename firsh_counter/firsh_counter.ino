@@ -29,6 +29,7 @@
 */
 
 #include <TM1637Display.h>
+#include <ESP8266WiFi.h>
 #include "wifi_dashboard.h"
 
 // ── Pin definitions ────────────────────────────────────────────
@@ -100,6 +101,22 @@ void setup() {
   // ── WiFi + web dashboard ─────────────────────────────────────
   wifiSetup(RESET_BTN);
   webServerSetup(count, beamBroken, running, lastSensorVal, updateDisplay);
+
+  // ── Show IP on display ───────────────────────────────────────
+  if (WiFi.isConnected()) {
+    IPAddress ip = WiFi.localIP();
+    for (int cycle = 0; cycle < 2; cycle++) {
+      for (int octet = 0; octet < 4; octet++) {
+        if (octet < 3) {
+          display.showNumberDecEx(ip[octet], 0x01, false, 4); // dot on rightmost digit
+        } else {
+          display.showNumberDec(ip[octet], false, 4);
+        }
+        delay(700);
+      }
+    }
+  }
+  display.showNumberDec(count, true, 4);
 
   Serial.println("Fish counter ready.");
   Serial.println("Pass a fish through the gate to tune DETECT_DELTA.");
