@@ -58,6 +58,7 @@ const int DETECT_DELTA   = 300;   // min deviation from baseline to count
 const int DEBOUNCE_MS    = 200;   // ms to wait after a count before re-arming
 const int REARM_MS       = 80;    // gap must read clear this long before re-arming
 const float BASE_ALPHA   = 0.02;  // baseline adaptation rate (0-1, higher = faster)
+const float SENSOR_ALPHA = 0.4;  // sensor noise filter (0-1, lower = smoother)
 
 // ── Globals ───────────────────────────────────────────────────
 TM1637Display display(CLK_PIN, DIO_PIN);
@@ -74,6 +75,10 @@ unsigned long brokenSince = 0;      // anti-stuck timer: when "broken" state beg
 // Non-blocking buzzer state
 bool buzzerActive = false;
 unsigned long buzzerStart = 0;
+
+// EMA filter state for sensor noise reduction
+float filteredSensor = 0;
+bool filteredSensorInit = false;
 
 void updateDisplay(int val) {
   display.showNumberDec(val, true, 4);
@@ -166,8 +171,14 @@ void loop() {
   // ── Handle web clients ──────────────────────────────────────
   server.handleClient();
 
-  // ── Read sensor ───────────────────────────────────────────
-  int sensorVal = analogRead(SENSOR_PIN);
+  // ── Read sensor with EMA noise filter ─────────────────────
+  int rawVal = analogRead(SENSOR_PIN);
+  if (!filteredSensorInit) {
+    filteredSensor = rawVal;
+    filteredSensorInit = true;
+  }
+  filteredSensor += (rawVal - filteredSensor) * SENSOR_ALPHA;
+  int sensorVal = (int)filteredSensor;
   lastSensorVal = sensorVal;
   unsigned long now = millis();
 
