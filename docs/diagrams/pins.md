@@ -1,29 +1,132 @@
-# Fish Counter — Wiring Diagram
+# Fish Counter — Wiring Table & Pin Map
 
 Sensor is a **conductivity (resistivity) gate**, not a laser beam. Full
 electrode + analog front-end design is in `resistivity_sensor.md`; this file
-covers the NodeMCU pin connections.
+documents every wire between every component.
 
-## NodeMCU v3 (ESP8266) Pin Map
+---
 
-| Component | Pin | NodeMCU Pin | GPIO | Notes |
-|---|---|---|---|---|
-| Conductivity gate (envelope) | OUT | A0 | ADC0 | Rectified gate level; only analog input on ESP8266 |
-| TM1637 Display | CLK | D1 | GPIO5 | Clock line |
-| TM1637 Display | DIO | D2 | GPIO4 | Data line |
-| Start/Stop Button | Leg 1 | D5 | GPIO14 | INPUT_PULLUP; press pulls LOW |
-| Reset Button | Leg 1 | D6 | GPIO12 | INPUT_PULLUP; press pulls LOW |
-| Active Buzzer | + | D7 | GPIO13 | Driven HIGH to beep |
-| Buttons / Buzzer | Leg 2 / − | GND | — | Ground |
+## NodeMCU v3 (ESP8266)
 
-The analog front end (TLC555 AC source, electrodes, BAT43 envelope detector,
-MCP6002 buffer) feeds the single A0 line. Power the 555 and op-amp from 3V3.
+| Pin | GPIO | Connects To | Notes |
+|---|---|---|---|
+| A0 | ADC0 | MCP6002 pin 1 (OUT) | Only analog input; rectified gate envelope |
+| D1 | GPIO5 | TM1637 CLK | |
+| D2 | GPIO4 | TM1637 DIO | |
+| D5 | GPIO14 | Start/Stop button terminal 1 | INPUT_PULLUP; press connects to GND |
+| D6 | GPIO12 | Reset button terminal 1 | INPUT_PULLUP; press connects to GND |
+| D7 | GPIO13 | Buzzer (+) | HIGH = beep |
+| 3V3 (left) | — | TLC555 pin 8 (VCC), MCP6002 pin 8 (VCC) | Powers sensor front-end |
+| GND (left) | — | GND rail (shared) | Common ground |
+| VIN | — | LM2596 5V OUT | Board power input |
 
-## Power
+---
 
-- LM2596 buck converter set to 5V output → NodeMCU VIN + GND
-- TLC555 and MCP6002 run off the board's 3.3V rail
-- Electrodes are AC-driven (DC-blocked) so the stainless never corrodes
+## TLC555 (Astable ~2 kHz)
+
+| Pin | Name | Connects To | Notes |
+|---|---|---|---|
+| 1 | GND | GND rail | |
+| 2 | TRIG | TLC555 pin 6 (THRESH) | Tied together for astable |
+| 3 | OUT | Cb (1 µF) → Electrode A | AC square wave to electrode |
+| 4 | RESET | TLC555 pin 8 (VCC) | Pulled high to enable |
+| 5 | CTRL | 10 nF → GND | Bypass cap to filter noise |
+| 6 | THRESH | TLC555 pin 2 (TRIG) + R2 → Cb/Ct | Timing junction |
+| 7 | DISCH | R1 → VCC, R2 → timing cap | Discharge pin |
+| 8 | VCC | NodeMCU 3V3 | Supply |
+
+**Timing:** R1 = 1 kΩ, R2 = 33 kΩ, Ct = 10 nF → ~2 kHz
+
+---
+
+## Electrodes & DC-Block Caps
+
+| From | To | Notes |
+|---|---|---|
+| TLC555 pin 3 (OUT) | Cb (1 µF) leg 1 | |
+| Cb (1 µF) leg 2 | Electrode A | AC drive to first ring |
+| Electrode B | Cb (1 µF) leg 1 | |
+| Cb (1 µF) leg 2 | GND rail | DC-block return — no electrolysis |
+
+---
+
+## SENSE Node & Divider
+
+| From | To | Notes |
+|---|---|---|
+| Electrode A / Cb junction | Rs (10 k trimpot) leg 1 | AC divider input |
+| Rs wiper | **SENSE** node | Tap to envelope detector |
+| Rs leg 2 | GND | Completes divider |
+
+---
+
+## Envelope Detector
+
+| From | To | Notes |
+|---|---|---|
+| SENSE node | BAT43 anode | Half-wave rectify |
+| BAT43 cathode | Ce (100 nF) + Rb (100 k) |||
+| Ce / Rb junction | MCP6002 pin 3 (IN+) | Smoothed DC envelope |
+| Ce (other leg) | GND | |
+| Rb (other leg) | GND | |
+
+---
+
+## MCP6002 (Buffer)
+
+| Pin | Name | Connects To | Notes |
+|---|---|---|---|
+| 1 | OUT | NodeMCU A0 | Buffered envelope level |
+| 2 | IN− | MCP6002 pin 1 (OUT) | Unity-gain buffer (tied to output) |
+| 3 | IN+ | Envelope detector (Ce / Rb junction) | DC envelope input |
+| 4 | V− | GND | |
+| 8 | V+ | NodeMCU 3V3 | Supply |
+
+---
+
+## TM1637 Display
+
+| Display Pin | Connects To |
+|---|---|
+| CLK | NodeMCU D1 (GPIO5) |
+| DIO | NodeMCU D2 (GPIO4) |
+| VCC | NodeMCU 3V3 (or VIN 5V — module has regulator) |
+| GND | GND rail |
+
+---
+
+## Buttons
+
+| Button | Terminal 1 | Terminal 2 |
+|---|---|---|
+| Start/Stop | NodeMCU D5 (GPIO14) | GND |
+| Reset | NodeMCU D6 (GPIO12) | GND |
+
+Both set `INPUT_PULLUP` in firmware → press reads LOW.
+
+---
+
+## Active Buzzer
+
+| Buzzer Pin | Connects To |
+|---|---|
+| (+) | NodeMCU D7 (GPIO13) |
+| (−) | GND |
+
+---
+
+## Power Supply
+
+| From | To | Notes |
+|---|---|---|
+| LM2596 IN+ | 7–12 V DC barrel jack | Input |
+| LM2596 IN− | GND | |
+| LM2596 OUT+ | NodeMCU VIN | Set to **5.0 V** |
+| LM2596 OUT− | GND rail | |
+
+TLC555 and MCP6002 run from NodeMCU 3V3 so A0 never exceeds 3.3 V.
+
+---
 
 ## ASCII Wiring
 
@@ -31,23 +134,22 @@ MCP6002 buffer) feeds the single A0 line. Power the 555 and op-amp from 3V3.
                         NodeMCU v3
                      +--------------+
                      |              |
-  Gate envelope ---→| A0           |   (from MCP6002 buffer)
+  MCP6002 OUT ─────→| A0           |
                      |              |
-                     |  D1 (GPIO5) |←------ TM1637 CLK
-                     |  D2 (GPIO4) |←------ TM1637 DIO
+                     |  D1 (GPIO5) |←────── TM1637 CLK
+                     |  D2 (GPIO4) |←────── TM1637 DIO
                      |              |
-                     |  D5 (GPIO14)|←------ Start/Stop Button ─→ GND
-                     |  D6 (GPIO12)|←------ Reset Button ──────→ GND
-                     |  D7 (GPIO13)|←------ Buzzer (+)
+                     |  D5 (GPIO14)|←────── Start/Stop ───→ GND
+                     |  D6 (GPIO12)|←────── Reset ─────────→ GND
+                     |  D7 (GPIO13)|←────── Buzzer (+)
                      |              |
-                     |          3V3 |──→ TLC555 + MCP6002 VCC
-                     |          GND |──→ Buzzer (-), Buttons, analog GND
-                     |          VIN |←── LM2596 5V out
+                     |          3V3 |──→ TLC555 VCC, MCP6002 V+
+                     |          GND |──→ Buzzer (−), buttons, GND rail
+                     |          VIN |←── LM2596 5V OUT
                      +--------------+
 
-  Analog front end (see resistivity_sensor.md):
-    TLC555 ~2kHz ─┤Cb├─ Rs ─┬─ Electrode A )(  water gap  )( Electrode B ─┤Cb├─ GND
-                            └─ SENSE ─► BAT43 + 100nF/100k ─► MCP6002 ─► A0
+  TLC555 ─┤Cb├─ Rs ─┬─ Electrode A )(  gap  )( Electrode B ─┤Cb├─ GND
+                     └─ SENSE ─► BAT43 ─► Ce//Rb ─► MCP6002 ─► A0
 ```
 
 ## Notes
@@ -57,3 +159,5 @@ MCP6002 buffer) feeds the single A0 line. Power the 555 and op-amp from 3V3.
   serial `Dev` readout (empty gap vs. fish in the gate).
 - Both buttons are optional — count can also be toggled/reset via the web
   dashboard (`POST /api/toggle`, `POST /api/reset`).
+- Detect deviation is |reading − baseline| > DETECT_DELTA in either direction;
+  the baseline self-calibrates when the gate is clear.
