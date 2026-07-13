@@ -246,15 +246,14 @@
   <line x1="680" y1="150" x2="780" y2="150" class="wire wire-green"/>
   <text x="670" y="170" class="label" fill="#27ae60">D2</text>
 
-  <!-- Buttons -->
+  <!-- Buttons: each uses INPUT_PULLUP → GPIO, other terminal → GND -->
   <line x1="900" y1="260" x2="950" y2="260" class="wire wire-blue"/>
   <text x="920" y="250" class="label" fill="#2980b9">D5</text>
   <line x1="980" y1="280" x2="980" y2="760" class="wire wire-black"/>
-  <line x1="980" y1="760" x2="500" y2="760" class="wire wire-black"/>
 
-  <line x1="900" y1="285" x2="950" y2="285" class="wire wire-green"/>
-  <text x="920" y="275" class="label" fill="#27ae60">D6</text>
-  <line x1="980" y1="300" x2="980" y2="320" class="wire wire-black"/>
+  <line x1="900" y1="320" x2="950" y2="320" class="wire wire-green"/>
+  <text x="920" y="310" class="label" fill="#27ae60">D6</text>
+  <line x1="980" y1="340" x2="980" y2="760" class="wire wire-black"/>
 
   <!-- Buzzer -->
   <line x1="900" y1="310" x2="950" y2="390" class="wire wire-orange"/>
