@@ -69,6 +69,7 @@ unsigned long lastCountTime = 0;
 unsigned long clearSince    = 0;    // when the gap last read clear (for re-arm)
 int  lastSensorVal = 0;
 float baseline     = 0;             // self-calibrating clear-water reading
+unsigned long brokenSince = 0;      // anti-stuck timer: when "broken" state began
 
 // Non-blocking buzzer state
 bool buzzerActive = false;
@@ -199,7 +200,15 @@ void loop() {
 
   if (currentlyBroken) {
     clearSince = 0;                       // fish present: not clear
+    // ── Anti-stuck: if sensor has been consistently "broken" for
+  //     ≥ 5 s the baseline is probably wrong (no fish is that long).
+  //     Slowly drift it so the system can recover on its own.
+    if (brokenSince == 0) brokenSince = now;
+    if (now - brokenSince > 5000) {
+      baseline += (sensorVal - baseline) * 0.001;  // very slow creep
+    }
   } else {
+    brokenSince = 0;  // reset anti-stuck timer — gap is clear
     // Gap clear: adapt the baseline toward the clear-water reading and
     // re-arm only after it has stayed clear for REARM_MS (so one fish's
     // head/body/tail isn't counted as several).
