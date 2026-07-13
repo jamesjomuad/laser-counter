@@ -193,6 +193,15 @@
   <line x1="710" y1="481" x2="715" y2="481" class="wire wire-orange"/>
   <text x="690" y="545" class="label" fill="#e67e22">→ A0</text>
 
+  <!-- A0 → GND noise filter cap (100 nF) -->
+  <line x1="710" y1="481" x2="710" y2="440" class="wire wire-orange"/>
+  <line x1="660" y1="420" x2="690" y2="420" class="wire wire-gray"/>
+  <line x1="660" y1="440" x2="690" y2="440" class="wire wire-gray"/>
+  <line x1="675" y1="420" x2="675" y2="406" class="wire wire-black"/>
+  <line x1="690" y1="440" x2="710" y2="440" class="wire wire-orange"/>
+  <text x="645" y="435" class="label" fill="#e67e22">100nF</text>
+  <text x="640" y="415" class="note" fill="#2c3e50">to GND</text>
+
   <!-- GND rail -->
   <line x1="730" y1="406" x2="600" y2="406" class="wire wire-black"/>
   <line x1="600" y1="406" x2="600" y2="590" class="wire wire-black"/>
