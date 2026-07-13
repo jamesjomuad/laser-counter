@@ -6,7 +6,7 @@
 extern ESP8266WebServer server;
 
 void wifiSetup(int resetBtnPin);
-void webServerSetup(int &count, bool &beamBroken, bool &running, int &lastSensorVal, void (*updateDisplay)(int));
+void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensorVal, void (*updateDisplay)(int));
 void addLog(const char *msg);
 void clearWifiSettings();
 

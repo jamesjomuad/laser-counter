@@ -63,7 +63,7 @@ const float BASE_ALPHA   = 0.02;  // baseline adaptation rate (0-1, higher = fas
 TM1637Display display(CLK_PIN, DIO_PIN);
 
 int  count        = 0;
-bool beamBroken   = false;          // true while a fish is in the gate
+bool fishInGate   = false;          // true while a fish is in the gate
 bool running      = true;
 unsigned long lastCountTime = 0;
 unsigned long clearSince    = 0;    // when the gap last read clear (for re-arm)
@@ -101,7 +101,7 @@ void setup() {
 
   // ── WiFi + web dashboard ─────────────────────────────────────
   wifiSetup(RESET_BTN);
-  webServerSetup(count, beamBroken, running, lastSensorVal, updateDisplay);
+  webServerSetup(count, fishInGate, running, lastSensorVal, updateDisplay);
 
   // ── Show IP on display ───────────────────────────────────────
   if (WiFi.isConnected()) {
@@ -177,7 +177,7 @@ void loop() {
   int deviation = abs(sensorVal - (int)baseline);
   bool currentlyBroken = (deviation > DETECT_DELTA);
 
-  if (running && currentlyBroken && !beamBroken) {
+  if (running && currentlyBroken && !fishInGate) {
     // Rising edge: a fish just entered the gate
     if (now - lastCountTime > DEBOUNCE_MS) {
       count++;
@@ -195,7 +195,7 @@ void loop() {
       Serial.println(logMsg);
       addLog(logMsg);
     }
-    beamBroken = true;
+    fishInGate = true;
   }
 
   if (currentlyBroken) {
@@ -214,7 +214,7 @@ void loop() {
     // head/body/tail isn't counted as several).
     baseline += (sensorVal - baseline) * BASE_ALPHA;
     if (clearSince == 0) clearSince = now;
-    if (now - clearSince > REARM_MS) beamBroken = false;
+    if (now - clearSince > REARM_MS) fishInGate = false;
   }
 
   // ── Non-blocking buzzer off ──────────────────────────────────

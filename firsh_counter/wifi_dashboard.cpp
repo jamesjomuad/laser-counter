@@ -6,7 +6,7 @@ ESP8266WebServer server(80);
 
 // Pointers to main sketch state
 static int  *pCount;
-static bool *pBeamBroken;
+static bool *pFishInGate;
 static bool *pRunning;
 static int  *pLastSensorVal;
 static void (*pUpdateDisplay)(int);
@@ -89,8 +89,8 @@ function poll(){
     document.getElementById("s").textContent=d.sensor;
     document.getElementById("b").style.width=(d.sensor/1023*100)+"%";
     const st=document.getElementById("st");
-    if(d.beam_broken){st.textContent="SENSOR BROKEN";st.className="beam broken";}
-    else{st.textContent="SENSOR OK";st.className="beam ok";}
+    if(d.fish_in_gate){st.textContent="FISH IN GATE";st.className="beam broken";}
+    else{st.textContent="GATE CLEAR";st.className="beam ok";}
     const tb=document.getElementById("tb");
     if(d.running){tb.textContent="Stop";tb.style.background="#ef4444";}
     else{tb.textContent="Start";tb.style.background="#22c55e";}
@@ -128,8 +128,8 @@ static void handleStatus() {
   json += *pCount;
   json += ",\"sensor\":";
   json += *pLastSensorVal;
-  json += ",\"beam_broken\":";
-  json += *pBeamBroken ? "true" : "false";
+  json += ",\"fish_in_gate\":";
+  json += *pFishInGate ? "true" : "false";
   json += ",\"running\":";
   json += *pRunning ? "true" : "false";
   json += "}";
@@ -197,9 +197,9 @@ void wifiSetup(int resetBtnPin) {
   }
 }
 
-void webServerSetup(int &count, bool &beamBroken, bool &running, int &lastSensorVal, void (*updateDisplay)(int)) {
+void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensorVal, void (*updateDisplay)(int)) {
   pCount         = &count;
-  pBeamBroken    = &beamBroken;
+  pFishInGate    = &fishInGate;
   pRunning       = &running;
   pLastSensorVal = &lastSensorVal;
   pUpdateDisplay = updateDisplay;
