@@ -134,14 +134,14 @@ TLC555 and MCP6002 run from NodeMCU 3V3 so A0 never exceeds 3.3 V.
                         NodeMCU v3
                      +--------------+
                      |              |
-  MCP6002 OUT ─────→| A0           |
+   MCP6002 OUT ─────→| A0           |
                      |              |
-                     |  D1 (GPIO5) |←────── TM1637 CLK
-                     |  D2 (GPIO4) |←────── TM1637 DIO
+                     |   D1 (GPIO5) |←────── TM1637 CLK
+                     |   D2 (GPIO4) |←────── TM1637 DIO
                      |              |
-                     |  D5 (GPIO14)|←────── Start/Stop ───→ GND
-                     |  D6 (GPIO12)|←────── Reset ─────────→ GND
-                     |  D7 (GPIO13)|←────── Buzzer (+)
+                     |   D5 (GPIO14)|←────── Start/Stop ───→ GND
+                     |   D6 (GPIO12)|←────── Reset ─────────→ GND
+                     |   D7 (GPIO13)|←────── Buzzer (+)
                      |              |
                      |          3V3 |──→ TLC555 VCC, MCP6002 V+
                      |          GND |──→ Buzzer (−), buttons, GND rail
