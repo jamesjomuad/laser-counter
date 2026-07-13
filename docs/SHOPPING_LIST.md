@@ -14,8 +14,8 @@ The current design uses a **conductivity (resistivity) gate**, not the old laser
 - [ ] **Tactile pushbuttons** ×2 (start/stop + reset)
 - [ ] **Active buzzer** 5 V or 3.3 V logic-level
 - [ ] **10 kΩ trimpot / multi-turn preset** (for Rs tuning)
-- [ ] **Resistors:** 1 kΩ, 33 kΩ, 100 kΩ
-- [ ] **Capacitors:** 10 nF, 100 nF, 1 µF ×2
+- [ ] **Resistors:** 1 kΩ, 33 kΩ, 10 kΩ (was 100 kΩ — changed for direct A0 drive)
+- [ ] **Capacitors:** 10 nF, 100 nF, 1 µF ×3 (Ce = 1 µF now)
 - [ ] **Schottky diode:** BAT43, BAT54, or 1N5819
 - [ ] **316 stainless-steel rings** ×2 for electrodes  
   *(Or 316 stainless washers as a simpler alternative.)*

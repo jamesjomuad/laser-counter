@@ -36,25 +36,30 @@ signal swing is too small.
 ## Signal chain (into A0)
 
 ```
-  TLC555 ~2kHz       Cb        Rs(trim)        SENSE      envelope         buffer
-  square wave ──┤1µF├──┬──[ 10k ]──┬── node ──►│┤├─►┬──► op-amp ──► A0
-                       │           │           BAT43 │   (MCP6002)
-                  Electrode A ◗    │              Ce 100nF
-                       )  ~10mm water gap         + Rb 100k
-                  Electrode B ◖    │               │
-                       │          GND             GND
-                   ┤1µF├
-                    Cb │
-                      GND
+  TLC555 ~2kHz       Cb        Rs(trim)        SENSE      envelope
+  square wave ──┤1µF├──┬──[ 10k ]──┬── node ──►│┤├─►┬───► A0 (via C_A0 100 nF)
+                        │           │           BAT43 │
+                   Electrode A ◗    │              Ce 1 µF
+                        )  ~10mm water gap         + Rb 10 k
+                   Electrode B ◖    │               │
+                        │          GND             GND
+                    ┤1µF├
+                     Cb │
+                       GND
 ```
 
 **Operation:** the TLC555 drives pure AC across the water gap (the 1 µF caps
 block DC so the steel never corrodes). The water gap + Rs form an AC divider;
 a fish changes the gap resistance, shifting the AC amplitude at **SENSE**.
-The BAT43 + 100 nF + 100 k rectify that to a smooth DC level (~10 ms
-response — fast enough for a fish in the throat for 50–200 ms). The MCP6002
-buffers it into **A0**. Detection is on *deviation from baseline*, so it works
-whether a fish raises or lowers the level.
+The BAT43 + 1 µF + 10 k rectify that to a smooth DC level (~10 ms
+response — fast enough for a fish in the throat for 50–200 ms). The 100 nF
+cap at A0 filters noise. Detection is on *deviation from baseline*, so it
+works whether a fish raises or lowers the level.
+
+> **Without a buffer (MCP6002):** Rb must be lowered to 10 kΩ and Ce raised to
+> 1 µF so the output impedance drops from 100 kΩ → 10 kΩ (the ESP8266 ADC is
+> noisy with high-impedance sources). If you have an MCP6002, restore Ce/Rb to
+> 100 nF / 100 k and insert it as a unity-gain buffer between envelope and A0.
 
 ## Bill of materials
 
@@ -64,8 +69,9 @@ whether a fish raises or lowers the level.
 | Rs | 10 k trimpot | set divider to mid-scale (tuning) |
 | Cb ×2 | 1 µF (film/ceramic) | DC-block — protects electrodes |
 | BAT43 (or 1N5819) | Schottky diode | rectifier (low drop, small-signal) |
-| Ce / Rb | 100 nF / 100 k | envelope smoothing (~10 ms) |
-| MCP6002 | rail-to-rail op-amp @ 3V3 | buffer into A0 (optional gain later) |
+| Ce / Rb | 1 µF / 10 kΩ | envelope smoothing (~10 ms), 10k output impedance |
+| MCP6002 | rail-to-rail op-amp @ 3V3 | buffer into A0 (optional, recommended if available) |
+| C_A0 | 100 nF ceramic | noise filter, solder direct across A0 to GND |
 | Electrodes | 2× 316 SS rings | the sensing gate |
 
 Power the TLC555 and op-amp from **3V3** so the level into A0 stays safe.

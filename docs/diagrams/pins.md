@@ -65,14 +65,24 @@ documents every wire between every component.
 | From | To | Notes |
 |---|---|---|
 | SENSE node | BAT43 anode | Half-wave rectify |
-| BAT43 cathode | Ce (100 nF) + Rb (100 k) |||
-| Ce / Rb junction | MCP6002 pin 3 (IN+) | Smoothed DC envelope |
+| BAT43 cathode | Ce (1 µF) + Rb (10 kΩ) |||
+| Ce / Rb junction | NodeMCU A0 (via 100 nF cap) | Smoothed DC envelope → ADC |
 | Ce (other leg) | GND | |
 | Rb (other leg) | GND | |
 
 ---
 
-## MCP6002 (Buffer)
+## A0 Noise Filter
+
+| From | To | Value |
+|---|---|---|
+| NodeMCU A0 | NodeMCU GND (adjacent pin) | **100 nF ceramic** — solder lead as short as possible |
+
+---
+
+## MCP6002 (Buffer — optional, recommended)
+
+*Only needed if you have one. Omit if the Ce/Rb values are 1 µF / 10 kΩ as documented above.*
 
 | Pin | Name | Connects To | Notes |
 |---|---|---|---|
@@ -81,6 +91,8 @@ documents every wire between every component.
 | 3 | IN+ | Envelope detector (Ce / Rb junction) | DC envelope input |
 | 4 | V− | GND | |
 | 8 | V+ | NodeMCU 3V3 | Supply |
+
+*Using the MCP6002? Restore Ce to 100 nF and Rb to 100 kΩ, then insert its output to A0.*
 
 ---
 
