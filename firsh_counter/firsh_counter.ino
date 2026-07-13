@@ -54,7 +54,7 @@ const int BEEP_MS = 50; // buzzer beep duration on each count
 // watch the serial "Dev" value for an empty gap vs. a fish in the gap
 // and set DETECT_DELTA between them. Lower it to catch fainter fish;
 // raise it if water ripple / bubbles cause false counts.
-const int DETECT_DELTA   = 60;    // min deviation from baseline to count
+const int DETECT_DELTA   = 300;   // min deviation from baseline to count
 const int DEBOUNCE_MS    = 200;   // ms to wait after a count before re-arming
 const int REARM_MS       = 80;    // gap must read clear this long before re-arming
 const float BASE_ALPHA   = 0.02;  // baseline adaptation rate (0-1, higher = faster)
