@@ -31,6 +31,7 @@
 #include <TM1637Display.h>
 #include <ESP8266WiFi.h>
 #include "wifi_dashboard.h"
+#include "wifi_setup.h"
 
 // ── Pin definitions ────────────────────────────────────────────
 #define CLK_PIN   D1    // TM1637 clock
@@ -168,8 +169,7 @@ void loop() {
     }
   }
 
-  // ── Handle web clients + SSE pushes ─────────────────────────────────
-  server.handleClient();
+  // ── Handle web clients ──────────────────────────────────────
   handleSSEClients();
 
   // ── Read sensor with EMA noise filter ─────────────────────

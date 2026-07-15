@@ -8,21 +8,26 @@ Use the exact CLI path and board FQBN below (do not assume a globally installed 
 
 ```bash
 # compile
-~/bin/arduino-cli.exe compile --fqbn esp8266:esp8266:nodemcuv2 laser_counter.ino
+~/bin/arduino-cli.exe compile --fqbn esp8266:esp8266:nodemcuv2 firsh_counter/firsh_counter.ino
 
 # upload (replace COMx with the actual port)
-~/bin/arduino-cli.exe upload --fqbn esp8266:esp8266:nodemcuv2 --port COMx laser_counter.ino
+~/bin/arduino-cli.exe upload --fqbn esp8266:esp8266:nodemcuv2 --port COMx firsh_counter/firsh_counter.ino
 ```
 
 Required libraries (install via Arduino Library Manager if missing):
 - `TM1637Display` by Avishay Orpaz
 - `WiFiManager` by tzapu
 
-## Entrypoints
-- `laser_counter.ino` — main sketch (sensor loop, display, buzzer, buttons).
-- `wifi_dashboard.h` / `wifi_dashboard.cpp` — WiFiManager captive portal + web dashboard + API.
+Required libraries (clone from GitHub — not in Library Manager):
+- `ESPAsyncTCP` by me-no-dev → `~/Documents/Arduino/libraries/ESPAsyncTCP`
+- `ESPAsyncWebServer` by me-no-dev → `~/Documents/Arduino/libraries/ESPAsyncWebServer`
 
-The `.ino` compiles together with `wifi_dashboard.cpp` automatically; no separate library packaging is needed.
+## Entrypoints
+- `firsh_counter.ino` — main sketch (sensor loop, display, buzzer, buttons).
+- `wifi_dashboard.h` / `wifi_dashboard.cpp` — AsyncWebServer dashboard + SSE + REST API.
+- `wifi_setup.h` / `wifi_setup.cpp` — WiFiManager connection setup (separate TU to avoid enum conflict between ESPAsyncWebServer and ESP8266WebServer).
+
+The `.ino` compiles together with `wifi_dashboard.cpp` and `wifi_setup.cpp` automatically; no separate library packaging is needed.
 
 ## Pin map (NodeMCU v3)
 | Function | Pin | Notes |
@@ -44,7 +49,7 @@ Power: LM2596 buck set to 5 V → NodeMCU VIN. TLC555 + MCP6002 run from NodeMCU
 - Dashboard at `http://<device-ip>/`; APIs: `GET /api/status`, `POST /api/toggle`, `POST /api/reset`, `GET /api/logs`.
 - After the boot countdown, the TM1637 display cycles through each IP octet twice (e.g. `192.` `168.` `  1.` `100`) before showing the count. If WiFi isn't connected, it skips straight to the count.
 
-## Key constants (in `laser_counter.ino`)
+## Key constants (in `firsh_counter.ino`)
 | Constant | Value | Purpose |
 |---|---|---|
 | `DETECT_DELTA` | 60 | Min deviation from baseline to count a fish |

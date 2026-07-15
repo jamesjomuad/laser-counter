@@ -1,14 +1,13 @@
 #ifndef WIFI_DASHBOARD_H
 #define WIFI_DASHBOARD_H
 
-#include <ESP8266WebServer.h>
+#include <ESPAsyncWebServer.h>
 
-extern ESP8266WebServer server;
+extern AsyncWebServer server;
+extern AsyncEventSource events;
 
-void wifiSetup(int resetBtnPin);
 void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensorVal, void (*updateDisplay)(int));
 void addLog(const char *msg);
-void clearWifiSettings();
 void handleSSEClients();
 
 #endif

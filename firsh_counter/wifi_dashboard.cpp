@@ -1,8 +1,8 @@
 #include "wifi_dashboard.h"
 #include <ESP8266WiFi.h>
-#include <WiFiManager.h>
 
-ESP8266WebServer server(80);
+AsyncWebServer server(80);
+AsyncEventSource events("/api/events");
 
 // Pointers to main sketch state
 static int  *pCount;
@@ -15,8 +15,8 @@ static void (*pUpdateDisplay)(int);
 #define LOG_MAX 50
 #define LOG_LINE_MAX 80
 static char   logBuf[LOG_MAX][LOG_LINE_MAX];
-static int    logHead = 0;   // next write position
-static int    logCount = 0;  // total entries (caps at LOG_MAX)
+static int    logHead = 0;
+static int    logCount = 0;
 
 void addLog(const char *msg) {
   unsigned long s = millis() / 1000;
@@ -26,22 +26,7 @@ void addLog(const char *msg) {
   if (logCount < LOG_MAX) logCount++;
 }
 
-// ── SSE state ─────────────────────────────────────────────────
-static WiFiClient sseClient;
-static bool sseActive = false;
-static unsigned long sseLastStatus = 0;
-static unsigned long sseLastLog = 0;
-#define SSE_INTERVAL_STATUS 200
-#define SSE_INTERVAL_LOG 1500
-
-// Send SSE data as a properly framed HTTP chunk on a raw client.
-static void sseSendChunk(WiFiClient &cl, const String &data) {
-  cl.print(data.length(), HEX);
-  cl.print("\r\n");
-  cl.print(data);
-  cl.print("\r\n");
-}
-
+// ── JSON helpers ─────────────────────────────────────────────
 static void buildStatusJSON(String &buf) {
   buf = "{\"count\":";
   buf += *pCount;
@@ -150,8 +135,8 @@ evtSource.addEventListener("log", function(e){
 });
 
 evtSource.addEventListener("error", function(){
-  evtSource.close();
-  setTimeout(function(){ location.reload(); }, 3000);
+  document.getElementById("st").textContent = "RECONNECTING...";
+  document.getElementById("st").className = "beam broken";
 });
 
 function toggle(){
@@ -166,94 +151,40 @@ function reset(){
 </html>
 )rawliteral";
 
-// ── Handlers ──────────────────────────────────────────────────
-static void handleRoot() {
-  server.send_P(200, "text/html", PAGE_HTML);
+// ── Handlers (AsyncWebServer) ─────────────────────────────────
+static void handleRoot(AsyncWebServerRequest *request) {
+  request->send_P(200, "text/html", PAGE_HTML);
 }
 
-static void handleStatus() {
+static void handleStatus(AsyncWebServerRequest *request) {
   String json;
   buildStatusJSON(json);
-  server.send(200, "application/json", json);
+  request->send(200, "application/json", json);
 }
 
-static void handleSSE() {
-  // Send response headers with chunked transfer, then store the client.
-  // The main loop pushes SSE data non-blocking via sseSendChunk().
-  if (sseActive) {
-    server.send(503, "application/json", "{\"error\":\"SSE client already connected\"}");
-    return;
-  }
-  server.sendHeader("Cache-Control", "no-cache");
-  server.sendHeader("Connection", "keep-alive");
-  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-  server.send(200, "text/event-stream", "");
-
-  sseClient = server.client();
-  sseClient.setNoDelay(true);
-  sseActive = true;
-  sseLastStatus = 0;
-  sseLastLog = 0;
-}
-
-// Called from main loop — pushes SSE events if a client is connected.
-// The main loop's delay(5) keeps this at ~200 Hz polling rate.
-void handleSSEClients() {
-  if (!sseActive) return;
-
-  if (!sseClient.connected()) {
-    sseClient.stop();
-    sseActive = false;
-    return;
-  }
-
-  unsigned long now = millis();
-
-  if (now - sseLastStatus >= SSE_INTERVAL_STATUS) {
-    sseLastStatus = now;
-    String data;
-    buildStatusJSON(data);
-    String ev = "event: status\ndata: ";
-    ev += data;
-    ev += "\n\n";
-    sseSendChunk(sseClient, ev);
-  }
-
-  if (now - sseLastLog >= SSE_INTERVAL_LOG) {
-    sseLastLog = now;
-    String data;
-    buildLogsJSON(data);
-    String ev = "event: log\ndata: ";
-    ev += data;
-    ev += "\n\n";
-    sseSendChunk(sseClient, ev);
-  }
-}
-
-static void handleToggle() {
+static void handleToggle(AsyncWebServerRequest *request) {
   *pRunning = !(*pRunning);
   const char *msg = *pRunning ? "Counting started via web" : "Counting stopped via web";
   Serial.println(msg);
   addLog(msg);
-  server.send(200, "application/json", "{\"ok\":true}");
+  request->send(200, "application/json", "{\"ok\":true}");
 }
 
-static void handleReset() {
+static void handleReset(AsyncWebServerRequest *request) {
   *pCount = 0;
   pUpdateDisplay(0);
   Serial.println("Count reset via web");
   addLog("Count reset via web");
-  server.send(200, "application/json", "{\"ok\":true}");
+  request->send(200, "application/json", "{\"ok\":true}");
 }
 
-static void handleLogs() {
+static void handleLogs(AsyncWebServerRequest *request) {
   String json = "{\"logs\":[";
   int start = (logCount < LOG_MAX) ? 0 : logHead;
   for (int i = 0; i < logCount; i++) {
     int idx = (start + i) % LOG_MAX;
     if (i > 0) json += ",";
     json += "\"";
-    // Escape any quotes in the log line
     for (int c = 0; logBuf[idx][c]; c++) {
       if (logBuf[idx][c] == '"') json += "\\\"";
       else json += logBuf[idx][c];
@@ -261,36 +192,32 @@ static void handleLogs() {
     json += "\"";
   }
   json += "]}";
-  server.send(200, "application/json", json);
+  request->send(200, "application/json", json);
 }
 
-void clearWifiSettings() {
-  WiFiManager wm;
-  wm.resetSettings();
-  Serial.println("WiFi credentials cleared. Restarting...");
-  addLog("WiFi credentials cleared via serial — restarting");
-  delay(1000);
-  ESP.restart();
-}
+// ── SSE pushes (called from main loop) ───────────────────────
+void handleSSEClients() {
+  static unsigned long lastStatus = 0;
+  static unsigned long lastLog = 0;
+  unsigned long now = millis();
 
-// ── Public functions ──────────────────────────────────────────
-void wifiSetup(int resetBtnPin) {
-  WiFiManager wm;
-  if (digitalRead(resetBtnPin) == LOW) {
-    Serial.println("Reset button held – clearing WiFi credentials");
-    wm.resetSettings();
+  if (now - lastStatus >= 200) {
+    lastStatus = now;
+    *pLastSensorVal = analogRead(A0);
+    String data;
+    buildStatusJSON(data);
+    events.send(data.c_str(), "status", now);
   }
-  wm.setConnectTimeout(10);        // 10s max to join saved WiFi
-  wm.setConfigPortalTimeout(180);
-  wm.setCaptivePortalEnable(false); // serve custom dashboard at 192.168.4.1
-  if (!wm.autoConnect("FishCounter-Setup")) {
-    Serial.println("WiFi not configured – running offline");
-  } else {
-    Serial.print("Connected! IP: ");
-    Serial.println(WiFi.localIP());
+
+  if (now - lastLog >= 1500) {
+    lastLog = now;
+    String data;
+    buildLogsJSON(data);
+    events.send(data.c_str(), "log", now);
   }
 }
 
+// ── Web server setup (WiFi setup is in wifi_setup.cpp) ────────
 void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensorVal, void (*updateDisplay)(int)) {
   pCount         = &count;
   pFishInGate    = &fishInGate;
@@ -298,11 +225,16 @@ void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensor
   pLastSensorVal = &lastSensorVal;
   pUpdateDisplay = updateDisplay;
 
-  server.on("/", handleRoot);
-  server.on("/api/status", handleStatus);
-  server.on("/api/events", handleSSE);
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/api/status", HTTP_GET, handleStatus);
   server.on("/api/toggle", HTTP_POST, handleToggle);
   server.on("/api/reset", HTTP_POST, handleReset);
-  server.on("/api/logs", handleLogs);
+  server.on("/api/logs", HTTP_GET, handleLogs);
+
+  events.onConnect([](AsyncEventSourceClient *client) {
+    client->send("connected", NULL, millis(), 2000);
+  });
+  server.addHandler(&events);
+
   server.begin();
 }
