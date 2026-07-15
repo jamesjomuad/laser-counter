@@ -168,8 +168,9 @@ void loop() {
     }
   }
 
-  // ── Handle web clients ──────────────────────────────────────
+  // ── Handle web clients + SSE pushes ─────────────────────────────────
   server.handleClient();
+  handleSSEClients();
 
   // ── Read sensor with EMA noise filter ─────────────────────
   int rawVal = analogRead(SENSOR_PIN);

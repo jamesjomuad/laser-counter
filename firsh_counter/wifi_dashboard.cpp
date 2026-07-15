@@ -26,6 +26,50 @@ void addLog(const char *msg) {
   if (logCount < LOG_MAX) logCount++;
 }
 
+// ── SSE state ─────────────────────────────────────────────────
+static WiFiClient sseClient;
+static bool sseActive = false;
+static unsigned long sseLastStatus = 0;
+static unsigned long sseLastLog = 0;
+#define SSE_INTERVAL_STATUS 200
+#define SSE_INTERVAL_LOG 1500
+
+// Send SSE data as a properly framed HTTP chunk on a raw client.
+static void sseSendChunk(WiFiClient &cl, const String &data) {
+  cl.print(data.length(), HEX);
+  cl.print("\r\n");
+  cl.print(data);
+  cl.print("\r\n");
+}
+
+static void buildStatusJSON(String &buf) {
+  buf = "{\"count\":";
+  buf += *pCount;
+  buf += ",\"sensor\":";
+  buf += *pLastSensorVal;
+  buf += ",\"fish_in_gate\":";
+  buf += *pFishInGate ? "true" : "false";
+  buf += ",\"running\":";
+  buf += *pRunning ? "true" : "false";
+  buf += "}";
+}
+
+static void buildLogsJSON(String &buf) {
+  buf = "[";
+  int start = (logCount < LOG_MAX) ? 0 : logHead;
+  for (int i = 0; i < logCount; i++) {
+    int idx = (start + i) % LOG_MAX;
+    if (i > 0) buf += ",";
+    buf += "\"";
+    for (int c = 0; logBuf[idx][c]; c++) {
+      if (logBuf[idx][c] == '"') buf += "\\\"";
+      else buf += logBuf[idx][c];
+    }
+    buf += "\"";
+  }
+  buf += "]";
+}
+
 // ── Web dashboard HTML ────────────────────────────────────────
 static const char PAGE_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -83,36 +127,40 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
   <div style="margin-top:12px; font-size:0.7rem; color:#334155;">Developed by James Jomuad</div>
 </div>
 <script>
-function poll(){
-  fetch("/api/status").then(r=>r.json()).then(d=>{
-    document.getElementById("c").textContent=d.count;
-    document.getElementById("s").textContent=d.sensor;
-    document.getElementById("b").style.width=(d.sensor/1023*100)+"%";
-    const st=document.getElementById("st");
-    if(d.fish_in_gate){st.textContent="FISH IN GATE";st.className="beam broken";}
-    else{st.textContent="GATE CLEAR";st.className="beam ok";}
-    const tb=document.getElementById("tb");
-    if(d.running){tb.textContent="Stop";tb.style.background="#ef4444";}
-    else{tb.textContent="Start";tb.style.background="#22c55e";}
-  }).catch(()=>{});
-}
+const evtSource = new EventSource("/api/events");
+
+evtSource.addEventListener("status", function(e){
+  const d = JSON.parse(e.data);
+  document.getElementById("c").textContent = d.count;
+  document.getElementById("s").textContent = d.sensor;
+  document.getElementById("b").style.width = (d.sensor / 1023 * 100) + "%";
+  const st = document.getElementById("st");
+  if (d.fish_in_gate) { st.textContent = "FISH IN GATE"; st.className = "beam broken"; }
+  else { st.textContent = "GATE CLEAR"; st.className = "beam ok"; }
+  const tb = document.getElementById("tb");
+  if (d.running) { tb.textContent = "Stop"; tb.style.background = "#ef4444"; }
+  else { tb.textContent = "Start"; tb.style.background = "#22c55e"; }
+});
+
+evtSource.addEventListener("log", function(e){
+  const logs = JSON.parse(e.data);
+  const el = document.getElementById("log");
+  el.innerHTML = logs.map(l => "<div>" + l + "</div>").join("");
+  el.scrollTop = el.scrollHeight;
+});
+
+evtSource.addEventListener("error", function(){
+  evtSource.close();
+  setTimeout(function(){ location.reload(); }, 3000);
+});
+
 function toggle(){
-  fetch("/api/toggle",{method:"POST"}).then(()=>poll());
+  fetch("/api/toggle", {method:"POST"});
 }
+
 function reset(){
-  fetch("/api/reset",{method:"POST"}).then(()=>poll());
+  fetch("/api/reset", {method:"POST"});
 }
-function pollLogs(){
-  fetch("/api/logs").then(r=>r.json()).then(d=>{
-    const el=document.getElementById("log");
-    el.innerHTML=d.logs.map(l=>"<div>"+l+"</div>").join("");
-    el.scrollTop=el.scrollHeight;
-  }).catch(()=>{});
-}
-setInterval(poll,500);
-setInterval(pollLogs,1000);
-poll();
-pollLogs();
 </script>
 </body>
 </html>
@@ -124,16 +172,62 @@ static void handleRoot() {
 }
 
 static void handleStatus() {
-  String json = "{\"count\":";
-  json += *pCount;
-  json += ",\"sensor\":";
-  json += *pLastSensorVal;
-  json += ",\"fish_in_gate\":";
-  json += *pFishInGate ? "true" : "false";
-  json += ",\"running\":";
-  json += *pRunning ? "true" : "false";
-  json += "}";
+  String json;
+  buildStatusJSON(json);
   server.send(200, "application/json", json);
+}
+
+static void handleSSE() {
+  // Send response headers with chunked transfer, then store the client.
+  // The main loop pushes SSE data non-blocking via sseSendChunk().
+  if (sseActive) {
+    server.send(503, "application/json", "{\"error\":\"SSE client already connected\"}");
+    return;
+  }
+  server.sendHeader("Cache-Control", "no-cache");
+  server.sendHeader("Connection", "keep-alive");
+  server.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  server.send(200, "text/event-stream", "");
+
+  sseClient = server.client();
+  sseClient.setNoDelay(true);
+  sseActive = true;
+  sseLastStatus = 0;
+  sseLastLog = 0;
+}
+
+// Called from main loop — pushes SSE events if a client is connected.
+// The main loop's delay(5) keeps this at ~200 Hz polling rate.
+void handleSSEClients() {
+  if (!sseActive) return;
+
+  if (!sseClient.connected()) {
+    sseClient.stop();
+    sseActive = false;
+    return;
+  }
+
+  unsigned long now = millis();
+
+  if (now - sseLastStatus >= SSE_INTERVAL_STATUS) {
+    sseLastStatus = now;
+    String data;
+    buildStatusJSON(data);
+    String ev = "event: status\ndata: ";
+    ev += data;
+    ev += "\n\n";
+    sseSendChunk(sseClient, ev);
+  }
+
+  if (now - sseLastLog >= SSE_INTERVAL_LOG) {
+    sseLastLog = now;
+    String data;
+    buildLogsJSON(data);
+    String ev = "event: log\ndata: ";
+    ev += data;
+    ev += "\n\n";
+    sseSendChunk(sseClient, ev);
+  }
 }
 
 static void handleToggle() {
@@ -206,6 +300,7 @@ void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensor
 
   server.on("/", handleRoot);
   server.on("/api/status", handleStatus);
+  server.on("/api/events", handleSSE);
   server.on("/api/toggle", HTTP_POST, handleToggle);
   server.on("/api/reset", HTTP_POST, handleReset);
   server.on("/api/logs", handleLogs);
