@@ -1,7 +1,7 @@
 # Agent Notes — Fish Counter
 
 ## What this repo is
-ESP8266/NodeMCU Arduino sketch that counts small tilapia fingerlings (~4 cm) passing through a 12 mm water-filled tube. Sensing is done with a **conductivity (resistivity) gate** (two stainless electrodes + TLC555 AC drive + MCP6002 buffer into A0), not a laser beam. The old laser/KY-008 wiring diagram in `diagrams/diagram.md` is stale — use `diagrams/pins.md` and `diagrams/resistivity_sensor.md` for the real hardware and BOM.
+ESP8266/NodeMCU Arduino sketch that counts small tilapia fingerlings (~4 cm) passing through a 12 mm water-filled tube. Sensing is done with a **conductivity (resistivity) gate** (two stainless electrodes + TLC555 AC drive + MCP6002 buffer into A0), not a laser beam. The old laser/KY-008 wiring diagram in `diagrams/diagram.md` is stale — use `docs/diagrams/pins.md` and `docs/diagrams/resistivity_sensor.md` for the real hardware and BOM. An **alternative IR beam-break** approach using a TSOP38238 receiver is documented in `docs/diagrams/ir_sensor.md`.
 
 ## Build / upload
 Use the exact CLI path and board FQBN below (do not assume a globally installed `arduino-cli`):
@@ -33,6 +33,7 @@ The `.ino` compiles together with `wifi_dashboard.cpp` automatically; no separat
 | Start/Stop button | D5 (GPIO14) | INPUT_PULLUP, press pulls LOW |
 | Reset button | D6 (GPIO12) | INPUT_PULLUP, press pulls LOW |
 | Active buzzer (+) | D7 (GPIO13) | HIGH to beep |
+| IR sensor (TSOP38238 OUT) | D8 (GPIO15) | Digital input, LOW = beam intact (IR mode only) |
 
 Power: LM2596 buck set to 5 V → NodeMCU VIN. TLC555 + MCP6002 run from NodeMCU 3V3.
 
