@@ -94,27 +94,6 @@ void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
 
-  // ── Force TM1637 bus into known state ──────────────────────
-  pinMode(CLK_PIN, OUTPUT);
-  pinMode(DIO_PIN, OUTPUT);
-  digitalWrite(CLK_PIN, HIGH);
-  digitalWrite(DIO_PIN, HIGH);
-  delay(1);
-  for (int i = 0; i < 10; i++) {
-    digitalWrite(CLK_PIN, LOW);
-    delayMicroseconds(5);
-    digitalWrite(CLK_PIN, HIGH);
-    delayMicroseconds(5);
-  }
-  digitalWrite(DIO_PIN, LOW);
-  delayMicroseconds(5);
-  digitalWrite(CLK_PIN, LOW);
-  delayMicroseconds(5);
-  digitalWrite(CLK_PIN, HIGH);
-  delayMicroseconds(5);
-  digitalWrite(DIO_PIN, HIGH);
-  delayMicroseconds(5);
-
   display.setBrightness(7);       // 0 (dim) – 7 (brightest)
 
   // ── Boot countdown ──────────────────────────────────────────
