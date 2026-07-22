@@ -1,25 +1,18 @@
 /*
-  Fish Counter — Resistivity Gate
+  Fish Counter — IR Beam-Break
   Counts small tilapia fingerlings passing through a 12 mm tube.
 
   Hardware : NodeMCU v3 (ESP8266 / CH340)
-             Conductivity gate  (envelope → A0)
-                 - 2x 316 stainless ring electrodes in the bore
-                 - TLC555 ~2 kHz AC drive, BAT43 envelope detector,
-                   MCP6002 buffer (see diagrams/resistivity_sensor.md)
+             Reflective IR obstacle sensor (OUT → D4, VCC → 3V3, GND → GND)
              TM1637  – 4-digit display (CLK → D1, DIO → D2)
              Buzzer  – active buzzer   (+ → D7, - → GND)
              Start/Stop btn           (D5 → GND, INPUT_PULLUP)
              LM2596  – buck converter  (set to 5 V)
 
-  Logic    : A0 reads the rectified conductivity level across the
-             electrode gap. The code learns the clear-water baseline
-             continuously; when a fish enters the gap the reading
-             deviates from baseline by more than DETECT_DELTA (either
-             direction) → counter increments, then waits for the gap
-             to read clear again (re-arm + debounce) before counting.
+  Logic    : A reflective IR sensor on D4 detects obstacles via a
+             rising edge (HIGH→LOW = blocked). Each new edge counted.
 
-  WiFi     : On first boot, creates AP "LaserCounter-Setup".
+  WiFi     : On first boot, creates AP "FishCounter-Setup".
              Connect to it and enter your WiFi credentials.
              Once connected, visit the device IP for a live dashboard.
 
@@ -44,8 +37,7 @@
 #define IR_PIN D4         // reflective IR sensor: LOW = obstacle detected
 
 // ── Tunable constants ──────────────────────────────────────────
-const int DEBOUNCE_MS    = 200;   // ms to wait after a count before re-arming
-const int REARM_MS       = 80;    // gap must read clear this long before re-arming
+const int REARM_MS       = 10;    // gap must read clear this long before re-arming
 const int BEEP_MS        = 50;    // buzzer beep duration per count
 
 // ── Globals ───────────────────────────────────────────────────
@@ -55,10 +47,8 @@ int  count        = 0;
 bool fishInGate   = false;          // true while a fish is in the gate
 bool running      = true;
 bool irDetected   = false;          // reflective IR sensor state
-static bool irPrev = false;
-unsigned long lastCountTime = 0;
+volatile bool irTriggered = false;  // set by ISR on pin change
 unsigned long clearSince    = 0;    // when the gap last read clear (for re-arm)
-int  lastSensorVal = 0;
 unsigned long brokenSince = 0;      // anti-stuck timer: when "broken" state began
 
 // Non-blocking buzzer state
@@ -80,6 +70,10 @@ void updateDisplay(int val) {
 }
 
 // ── Setup ─────────────────────────────────────────────────────
+void IRAM_ATTR irISR() {
+  irTriggered = true;
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -87,7 +81,7 @@ void setup() {
   pinMode(STARTSTOP_BTN, INPUT_PULLUP);
   pinMode(IR_PIN, INPUT_PULLUP);
   irDetected = (digitalRead(IR_PIN) == LOW);
-  irPrev = irDetected;
+  attachInterrupt(digitalPinToInterrupt(IR_PIN), irISR, CHANGE);
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
 
@@ -101,7 +95,7 @@ void setup() {
 
   // ── WiFi + web dashboard ─────────────────────────────────────
   wifiSetup(RESET_BTN);
-  webServerSetup(count, fishInGate, running, lastSensorVal, irDetected, updateDisplay);
+  webServerSetup(count, fishInGate, running, irDetected, updateDisplay);
 
   // ── Show IP on display ───────────────────────────────────────
   if (WiFi.isConnected()) {
@@ -172,30 +166,29 @@ void loop() {
 
   unsigned long now = millis();
 
-  // ── Read reflective IR sensor ───────────────────────────────
-  bool irNow = (digitalRead(IR_PIN) == LOW);
-  bool irRising = irNow && !irPrev;   // just became LOW (obstacle detected)
-  irPrev = irNow;
-  irDetected = irNow;
+  // ── Read reflective IR sensor (interrupt-driven) ────────────
+  if (irTriggered) {
+    irTriggered = false;
+    irDetected = (digitalRead(IR_PIN) == LOW);
+  }
 
-  // ── Fish detection ─────────────────────────────────────────
-  bool currentlyBroken = irNow;
+  bool currentlyBroken = irDetected;
+  static bool prevBroken = false;
+  bool risingEdge = currentlyBroken && !prevBroken;
+  prevBroken = currentlyBroken;
 
-  if (running && irRising && !fishInGate) {
-    if (now - lastCountTime > DEBOUNCE_MS) {
-      count++;
-      lastCountTime = now;
-      if (count > 9999) count = 0;
+  if (running && risingEdge && !fishInGate) {
+    count++;
+    if (count > 9999) count = 0;
 
-      display.showNumberDec(count, true, 4);
-      digitalWrite(BUZZER_PIN, HIGH);
-      buzzerActive = true;
-      buzzerStart = millis();
-      char logMsg[48];
-      snprintf(logMsg, sizeof(logMsg), "Fish #%d (IR)", count);
-      Serial.println(logMsg);
-      addLog(logMsg);
-    }
+    display.showNumberDec(count, true, 4);
+    digitalWrite(BUZZER_PIN, HIGH);
+    buzzerActive = true;
+    buzzerStart = millis();
+    char logMsg[48];
+    snprintf(logMsg, sizeof(logMsg), "Fish #%d (IR)", count);
+    Serial.println(logMsg);
+    addLog(logMsg);
     fishInGate = true;
   }
 

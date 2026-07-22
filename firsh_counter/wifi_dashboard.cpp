@@ -8,7 +8,6 @@ AsyncEventSource events("/api/events");
 static int  *pCount;
 static bool *pFishInGate;
 static bool *pRunning;
-static int  *pLastSensorVal;
 static bool *pIrDetected;
 static void (*pUpdateDisplay)(int);
 
@@ -31,8 +30,6 @@ void addLog(const char *msg) {
 static void buildStatusJSON(String &buf) {
   buf = "{\"count\":";
   buf += *pCount;
-  buf += ",\"sensor\":";
-  buf += *pLastSensorVal;
   buf += ",\"fish_in_gate\":";
   buf += *pFishInGate ? "true" : "false";
   buf += ",\"running\":";
@@ -206,7 +203,6 @@ void handleSSEClients() {
 
   if (now - lastStatus >= 200) {
     lastStatus = now;
-    *pLastSensorVal = analogRead(A0);
     String data;
     buildStatusJSON(data);
     events.send(data.c_str(), "status", now);
@@ -221,11 +217,10 @@ void handleSSEClients() {
 }
 
 // ── Web server setup (WiFi setup is in wifi_setup.cpp) ────────
-void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensorVal, bool &irDetected, void (*updateDisplay)(int)) {
+void webServerSetup(int &count, bool &fishInGate, bool &running, bool &irDetected, void (*updateDisplay)(int)) {
   pCount         = &count;
   pFishInGate    = &fishInGate;
   pRunning       = &running;
-  pLastSensorVal = &lastSensorVal;
   pIrDetected    = &irDetected;
   pUpdateDisplay = updateDisplay;
 
