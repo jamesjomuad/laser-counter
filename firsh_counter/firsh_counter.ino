@@ -36,31 +36,17 @@
 // ── Pin definitions ────────────────────────────────────────────
 #define CLK_PIN   D1    // TM1637 clock
 #define DIO_PIN   D2    // TM1637 data
-#define SENSOR_PIN A0   // conductivity envelope from the electrode gate
 
 // Optional reset button (connect between D6 and GND, uses INPUT_PULLUP)
 #define RESET_BTN D6
 #define BUZZER_PIN D7   // active buzzer (+ → D7, - → GND)
 #define STARTSTOP_BTN D5  // start/stop toggle (D5 → GND, INPUT_PULLUP)
-#define IR_PIN D8         // reflective IR sensor: LOW = obstacle detected
-
-const int BEEP_MS = 50; // buzzer beep duration on each count
+#define IR_PIN D4         // reflective IR sensor: LOW = obstacle detected
 
 // ── Tunable constants ──────────────────────────────────────────
-// Detection uses a self-calibrating baseline instead of a fixed
-// threshold: the code learns the clear-water reading continuously,
-// then counts when the live reading deviates from it by DETECT_DELTA
-// (in EITHER direction — a fish may raise or lower conductivity).
-// This cancels out drift from water temperature / salinity.
-// Tuning: with no fish, set the Rs trimpot so A0 sits mid-scale, then
-// watch the serial "Dev" value for an empty gap vs. a fish in the gap
-// and set DETECT_DELTA between them. Lower it to catch fainter fish;
-// raise it if water ripple / bubbles cause false counts.
-const int DETECT_DELTA   = 60;   // min deviation from baseline to count
 const int DEBOUNCE_MS    = 200;   // ms to wait after a count before re-arming
 const int REARM_MS       = 80;    // gap must read clear this long before re-arming
-const float BASE_ALPHA   = 0.02;  // baseline adaptation rate (0-1, higher = faster)
-const float SENSOR_ALPHA = 0.4;  // sensor noise filter (0-1, lower = smoother)
+const int BEEP_MS        = 50;    // buzzer beep duration per count
 
 // ── Globals ───────────────────────────────────────────────────
 TM1637Display display(CLK_PIN, DIO_PIN);
@@ -69,19 +55,15 @@ int  count        = 0;
 bool fishInGate   = false;          // true while a fish is in the gate
 bool running      = true;
 bool irDetected   = false;          // reflective IR sensor state
+static bool irPrev = false;
 unsigned long lastCountTime = 0;
 unsigned long clearSince    = 0;    // when the gap last read clear (for re-arm)
 int  lastSensorVal = 0;
-float baseline     = 0;             // self-calibrating clear-water reading
 unsigned long brokenSince = 0;      // anti-stuck timer: when "broken" state began
 
 // Non-blocking buzzer state
 bool buzzerActive = false;
 unsigned long buzzerStart = 0;
-
-// EMA filter state for sensor noise reduction
-float filteredSensor = 0;
-bool filteredSensorInit = false;
 
 void showStop() {
   Serial.println("showStop() called");
@@ -103,7 +85,9 @@ void setup() {
 
   pinMode(RESET_BTN, INPUT_PULLUP);
   pinMode(STARTSTOP_BTN, INPUT_PULLUP);
-  pinMode(IR_PIN, INPUT);
+  pinMode(IR_PIN, INPUT_PULLUP);
+  irDetected = (digitalRead(IR_PIN) == LOW);
+  irPrev = irDetected;
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
 
@@ -114,9 +98,6 @@ void setup() {
     display.showNumberDec(i * 1111, false, 4);
     delay(400);
   }
-
-  // Seed the baseline with the current clear-water reading
-  baseline = analogRead(SENSOR_PIN);
 
   // ── WiFi + web dashboard ─────────────────────────────────────
   wifiSetup(RESET_BTN);
@@ -138,8 +119,7 @@ void setup() {
   }
   display.showNumberDec(count, true, 4);
 
-  Serial.println("Fish counter ready.");
-  Serial.println("Pass a fish through the gate to tune DETECT_DELTA.");
+  Serial.println("Fish counter ready — IR sensor mode.");
   addLog("Fish counter ready");
 }
 
@@ -190,33 +170,21 @@ void loop() {
   // ── Handle web clients ──────────────────────────────────────
   handleSSEClients();
 
-  // ── Read sensor with EMA noise filter ─────────────────────
-  int rawVal = analogRead(SENSOR_PIN);
-  if (!filteredSensorInit) {
-    filteredSensor = rawVal;
-    filteredSensorInit = true;
-  }
-  filteredSensor += (rawVal - filteredSensor) * SENSOR_ALPHA;
-  int sensorVal = (int)filteredSensor;
-  lastSensorVal = sensorVal;
   unsigned long now = millis();
 
-  // ── Read reflective IR sensor ─────────────────────────────────
-  irDetected = (digitalRead(IR_PIN) == HIGH);
+  // ── Read reflective IR sensor ───────────────────────────────
+  bool irNow = (digitalRead(IR_PIN) == LOW);
+  bool irRising = irNow && !irPrev;   // just became LOW (obstacle detected)
+  irPrev = irNow;
+  irDetected = irNow;
 
-  // ── Fish detection: deviation from self-calibrating baseline ─
-  // A fish in the gate shifts conductivity away from the learned
-  // clear-water baseline in either direction.
-  int deviation = abs(sensorVal - (int)baseline);
-  bool currentlyBroken = (deviation > DETECT_DELTA);
+  // ── Fish detection ─────────────────────────────────────────
+  bool currentlyBroken = irNow;
 
-  if (running && currentlyBroken && !fishInGate) {
-    // Rising edge: a fish just entered the gate
+  if (running && irRising && !fishInGate) {
     if (now - lastCountTime > DEBOUNCE_MS) {
       count++;
       lastCountTime = now;
-
-      // Cap at 9999 for 4-digit display
       if (count > 9999) count = 0;
 
       display.showNumberDec(count, true, 4);
@@ -224,7 +192,7 @@ void loop() {
       buzzerActive = true;
       buzzerStart = millis();
       char logMsg[48];
-      snprintf(logMsg, sizeof(logMsg), "Fish #%d (dev: %d)", count, deviation);
+      snprintf(logMsg, sizeof(logMsg), "Fish #%d (IR)", count);
       Serial.println(logMsg);
       addLog(logMsg);
     }
@@ -232,20 +200,16 @@ void loop() {
   }
 
   if (currentlyBroken) {
-    clearSince = 0;                       // fish present: not clear
-    // ── Anti-stuck: if sensor has been consistently "broken" for
-  //     ≥ 5 s the baseline is probably wrong (no fish is that long).
-  //     Slowly drift it so the system can recover on its own.
+    clearSince = 0;
+    // Anti-stuck: if blocked ≥ 5 s, assume false positive and clear
     if (brokenSince == 0) brokenSince = now;
     if (now - brokenSince > 5000) {
-      baseline += (sensorVal - baseline) * 0.001;  // very slow creep
+      fishInGate = false;
+      brokenSince = now;
+      Serial.println("IR stuck timeout — cleared");
     }
   } else {
-    brokenSince = 0;  // reset anti-stuck timer — gap is clear
-    // Gap clear: adapt the baseline toward the clear-water reading and
-    // re-arm only after it has stayed clear for REARM_MS (so one fish's
-    // head/body/tail isn't counted as several).
-    baseline += (sensorVal - baseline) * BASE_ALPHA;
+    brokenSince = 0;
     if (clearSince == 0) clearSince = now;
     if (now - clearSince > REARM_MS) fishInGate = false;
   }
@@ -256,19 +220,15 @@ void loop() {
     buzzerActive = false;
   }
 
-  // Debug: print sensor, baseline and deviation every 500 ms.
-  // Use this to pick DETECT_DELTA: compare Dev with an empty gap vs.
-  // a fish in the gate, then set DETECT_DELTA between them.
+  // Debug: print state every 500 ms.
   static unsigned long lastPrint = 0;
   if (millis() - lastPrint > 500) {
-    Serial.print("Sensor: ");
-    Serial.print(sensorVal);
-    Serial.print("  Baseline: ");
-    Serial.print((int)baseline);
-    Serial.print("  Dev: ");
-    Serial.print(deviation);
+    Serial.print("Count: ");
+    Serial.print(count);
     Serial.print("  IR: ");
-    Serial.println(irDetected ? "OBST" : "CLR");
+    Serial.print(digitalRead(IR_PIN));
+    Serial.print("  fishInGate: ");
+    Serial.println(fishInGate ? "YES" : "no");
     lastPrint = millis();
   }
 

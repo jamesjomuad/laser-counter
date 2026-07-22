@@ -11,12 +11,13 @@ documents every wire between every component.
 | Pin | GPIO | Connects To | Notes |
 |---|---|---|---|
 | A0 | ADC0 | MCP6002 pin 1 (OUT) | Only analog input; rectified gate envelope |
+| D4 | GPIO2 | Reflective IR sensor OUT | LOW = obstacle detected (INPUT_PULLUP) |
 | D1 | GPIO5 | TM1637 CLK | |
 | D2 | GPIO4 | TM1637 DIO | |
 | D5 | GPIO14 | Start/Stop button terminal 1 | INPUT_PULLUP; press connects to GND |
 | D6 | GPIO12 | Reset button terminal 1 | INPUT_PULLUP; press connects to GND |
 | D7 | GPIO13 | Buzzer (+) | HIGH = beep |
-| D8 | GPIO15 | Reflective IR sensor OUT | LOW = obstacle detected (INPUT) |
+| D8 | GPIO15 | (unused — avoid due to fixed pull-down) | Boot strapping pin, not used |
 | 3V3 (left) | — | TLC555 pin 8 (VCC), MCP6002 pin 8 (VCC) | Powers sensor front-end |
 | GND (left) | — | GND rail (shared) | Common ground |
 | VIN | — | LM2596 5V OUT | Board power input |
@@ -146,18 +147,18 @@ TLC555 and MCP6002 run from NodeMCU 3V3 so A0 never exceeds 3.3 V.
 ```
                         NodeMCU v3
                      +--------------+
-                     |              |
-   MCP6002 OUT ─────→| A0           |
-                     |              |
-                     |   D1 (GPIO5) |←────── TM1637 CLK
-                     |   D2 (GPIO4) |←────── TM1637 DIO
-                     |              |
-                     |   D5 (GPIO14)|←────── Start/Stop ───→ GND
-                     |   D6 (GPIO12)|←────── Reset ─────────→ GND
-                      |   D7 (GPIO13)|←────── Buzzer (+)
-                      |   D8 (GPIO15)|←────── IR sensor OUT (LOW = object)
                       |              |
-                     |          3V3 |──→ TLC555 VCC, MCP6002 V+
+    MCP6002 OUT ─────→| A0           |
+                      |              |
+                       |   D4 (GPIO2) |←────── IR sensor OUT (LOW = object)
+                      |   D1 (GPIO5) |←────── TM1637 CLK
+                      |   D2 (GPIO4) |←────── TM1637 DIO
+                      |              |
+                      |   D5 (GPIO14)|←────── Start/Stop ───→ GND
+                      |   D6 (GPIO12)|←────── Reset ─────────→ GND
+                      |   D7 (GPIO13)|←────── Buzzer (+)
+                      |              |
+                      |          3V3 |──→ TLC555 VCC, MCP6002 V+
                      |          GND |──→ Buzzer (−), buttons, GND rail
                      |          VIN |←── LM2596 5V OUT
                      +--------------+
@@ -175,6 +176,8 @@ TLC555 and MCP6002 run from NodeMCU 3V3 so A0 never exceeds 3.3 V.
   dashboard (`POST /api/toggle`, `POST /api/reset`).
 - Detect deviation is |reading − baseline| > DETECT_DELTA in either direction;
   the baseline self-calibrates when the gate is clear.
-- **IR sensor (reflective obstacle avoidance):** D8 (GPIO15). LOW = obstacle detected,
-  HIGH = clear. Supply 3.3V–5V to module VCC. See `ir_sensor.md` for the TSOP38238
+- **IR sensor (reflective obstacle avoidance):** D4 (GPIO2). LOW = obstacle detected,
+  HIGH = clear. Uses `INPUT_PULLUP` so a disconnected pin reads HIGH (no false counts).
+  Supply 3.3V–5V to module VCC. **Avoid D8 (GPIO15)** — it has a fixed internal pull-down
+  that interferes with the sensor's HIGH output. See `ir_sensor.md` for the TSOP38238
   beam-break alternative (different wiring, same pin).

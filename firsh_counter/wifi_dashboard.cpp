@@ -76,13 +76,11 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
   h1 { font-size:1.2rem; color:#94a3b8; margin-bottom:24px; letter-spacing:2px;
        text-transform:uppercase; }
   .count { font-family:'Digital-7 Mono','Digital-7',monospace; font-size:5rem; font-weight:400; color:#38bdf8; letter-spacing:4px; font-variant-numeric:tabular-nums; }
-  .sensor { margin-top:20px; font-size:0.9rem; color:#64748b; }
-  .bar-bg { margin-top:8px; height:6px; background:#334155; border-radius:3px; overflow:hidden; }
-  .bar { height:100%; background:#38bdf8; border-radius:3px; transition:width .3s; }
-  .beam { margin-top:16px; font-size:0.85rem; font-weight:600; padding:4px 12px;
-          border-radius:999px; display:inline-block; }
-  .beam.ok { background:#064e3b; color:#34d399; }
-  .beam.broken { background:#7f1d1d; color:#fca5a5; }
+  .status { margin-top:16px; font-size:0.85rem; font-weight:600; padding:4px 12px;
+            border-radius:999px; display:inline-block; }
+  .status.ok { background:#064e3b; color:#34d399; }
+  .status.broken { background:#7f1d1d; color:#fca5a5; }
+  .ir-label { margin-top:8px; font-size:0.75rem; color:#64748b; }
   button { margin-top:24px; padding:10px 28px; border:none; border-radius:8px;
            background:#ef4444; color:#fff; font-size:1rem; cursor:pointer;
            transition:background .2s; }
@@ -100,10 +98,8 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
 <div class="card">
   <h1>Fish Counter</h1>
   <div class="count" id="c">--</div>
-  <div class="sensor">Sensor: <span id="s">--</span> / 1023</div>
-  <div class="bar-bg"><div class="bar" id="b" style="width:0%"></div></div>
-  <div><span class="beam ok" id="st">--</span></div>
-  <div style="margin-top:8px"><span class="beam" id="ir_st">IR: --</span></div>
+  <div><span class="status ok" id="st">--</span></div>
+  <div class="ir-label">IR sensor: <span id="s">--</span></div>
   <div style="margin-top:24px">
     <button id="tb" onclick="toggle()" style="background:#22c55e">Start</button>
     <button onclick="reset()">Reset Counter</button>
@@ -121,14 +117,10 @@ const evtSource = new EventSource("/api/events");
 evtSource.addEventListener("status", function(e){
   const d = JSON.parse(e.data);
   document.getElementById("c").textContent = d.count;
-  document.getElementById("s").textContent = d.sensor;
-  document.getElementById("b").style.width = (d.sensor / 1023 * 100) + "%";
   const st = document.getElementById("st");
-  if (d.fish_in_gate) { st.textContent = "FISH IN GATE"; st.className = "beam broken"; }
-  else { st.textContent = "GATE CLEAR"; st.className = "beam ok"; }
-  const ir = document.getElementById("ir_st");
-  if (d.ir_detected) { ir.textContent = "IR: OBSTACLE"; ir.className = "beam broken"; }
-  else { ir.textContent = "IR: CLEAR"; ir.className = "beam ok"; }
+  if (d.fish_in_gate) { st.textContent = "COUNTING"; st.className = "status broken"; }
+  else { st.textContent = "AWAITING"; st.className = "status ok"; }
+  document.getElementById("s").textContent = d.ir_detected ? "OBSTACLE" : "CLEAR";
   const tb = document.getElementById("tb");
   if (d.running) { tb.textContent = "Stop"; tb.style.background = "#ef4444"; }
   else { tb.textContent = "Start"; tb.style.background = "#22c55e"; }
@@ -143,7 +135,7 @@ evtSource.addEventListener("log", function(e){
 
 evtSource.addEventListener("error", function(){
   document.getElementById("st").textContent = "RECONNECTING...";
-  document.getElementById("st").className = "beam broken";
+  document.getElementById("st").className = "status broken";
 });
 
 function toggle(){

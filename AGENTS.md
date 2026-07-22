@@ -38,7 +38,7 @@ The `.ino` compiles together with `wifi_dashboard.cpp` and `wifi_setup.cpp` auto
 | Start/Stop button | D5 (GPIO14) | INPUT_PULLUP, press pulls LOW |
 | Reset button | D6 (GPIO12) | INPUT_PULLUP, press pulls LOW |
 | Active buzzer (+) | D7 (GPIO13) | HIGH to beep |
-| IR sensor (reflective obstacle) | D8 (GPIO15) | LOW = obstacle detected |
+| IR sensor (reflective obstacle) | D4 (GPIO2) | LOW = obstacle detected (**not** D0 — no pull-up; not D8 — fixed pull-down interferes) |
 | IR sensor (TSOP38238 OUT) | D8 (GPIO15) | Digital input, LOW = beam intact (IR mode only) |
 
 Power: LM2596 buck set to 5 V → NodeMCU VIN. TLC555 + MCP6002 run from NodeMCU 3V3.
