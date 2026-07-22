@@ -9,6 +9,7 @@ static int  *pCount;
 static bool *pFishInGate;
 static bool *pRunning;
 static int  *pLastSensorVal;
+static bool *pIrDetected;
 static void (*pUpdateDisplay)(int);
 
 // ── Log ring buffer ──────────────────────────────────────────
@@ -36,6 +37,8 @@ static void buildStatusJSON(String &buf) {
   buf += *pFishInGate ? "true" : "false";
   buf += ",\"running\":";
   buf += *pRunning ? "true" : "false";
+  buf += ",\"ir_detected\":";
+  buf += *pIrDetected ? "true" : "false";
   buf += "}";
 }
 
@@ -88,7 +91,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
   .log-wrap { margin-top:24px; text-align:left; }
   .log-title { font-size:0.8rem; color:#64748b; text-transform:uppercase; letter-spacing:1px;
                margin-bottom:8px; }
-  .log { background:#0f172a; border-radius:8px; padding:12px; height:180px;
+  .log { background:#0f172a; border-radius:8px; padding:12px; height:360px;
          overflow-y:auto; font-family:'Courier New',monospace; font-size:0.75rem;
          color:#94a3b8; line-height:1.6; }
 </style>
@@ -100,6 +103,7 @@ static const char PAGE_HTML[] PROGMEM = R"rawliteral(
   <div class="sensor">Sensor: <span id="s">--</span> / 1023</div>
   <div class="bar-bg"><div class="bar" id="b" style="width:0%"></div></div>
   <div><span class="beam ok" id="st">--</span></div>
+  <div style="margin-top:8px"><span class="beam" id="ir_st">IR: --</span></div>
   <div style="margin-top:24px">
     <button id="tb" onclick="toggle()" style="background:#22c55e">Start</button>
     <button onclick="reset()">Reset Counter</button>
@@ -122,6 +126,9 @@ evtSource.addEventListener("status", function(e){
   const st = document.getElementById("st");
   if (d.fish_in_gate) { st.textContent = "FISH IN GATE"; st.className = "beam broken"; }
   else { st.textContent = "GATE CLEAR"; st.className = "beam ok"; }
+  const ir = document.getElementById("ir_st");
+  if (d.ir_detected) { ir.textContent = "IR: OBSTACLE"; ir.className = "beam broken"; }
+  else { ir.textContent = "IR: CLEAR"; ir.className = "beam ok"; }
   const tb = document.getElementById("tb");
   if (d.running) { tb.textContent = "Stop"; tb.style.background = "#ef4444"; }
   else { tb.textContent = "Start"; tb.style.background = "#22c55e"; }
@@ -145,6 +152,7 @@ function toggle(){
 
 function reset(){
   fetch("/api/reset", {method:"POST"});
+  document.getElementById("log").innerHTML = "";
 }
 </script>
 </body>
@@ -164,6 +172,7 @@ static void handleStatus(AsyncWebServerRequest *request) {
 
 static void handleToggle(AsyncWebServerRequest *request) {
   *pRunning = !(*pRunning);
+  pUpdateDisplay(*pCount);
   const char *msg = *pRunning ? "Counting started via web" : "Counting stopped via web";
   Serial.println(msg);
   addLog(msg);
@@ -172,6 +181,8 @@ static void handleToggle(AsyncWebServerRequest *request) {
 
 static void handleReset(AsyncWebServerRequest *request) {
   *pCount = 0;
+  logHead = 0;
+  logCount = 0;
   pUpdateDisplay(0);
   Serial.println("Count reset via web");
   addLog("Count reset via web");
@@ -218,11 +229,12 @@ void handleSSEClients() {
 }
 
 // ── Web server setup (WiFi setup is in wifi_setup.cpp) ────────
-void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensorVal, void (*updateDisplay)(int)) {
+void webServerSetup(int &count, bool &fishInGate, bool &running, int &lastSensorVal, bool &irDetected, void (*updateDisplay)(int)) {
   pCount         = &count;
   pFishInGate    = &fishInGate;
   pRunning       = &running;
   pLastSensorVal = &lastSensorVal;
+  pIrDetected    = &irDetected;
   pUpdateDisplay = updateDisplay;
 
   server.on("/", HTTP_GET, handleRoot);

@@ -42,6 +42,7 @@
 #define RESET_BTN D6
 #define BUZZER_PIN D7   // active buzzer (+ → D7, - → GND)
 #define STARTSTOP_BTN D5  // start/stop toggle (D5 → GND, INPUT_PULLUP)
+#define IR_PIN D8         // reflective IR sensor: LOW = obstacle detected
 
 const int BEEP_MS = 50; // buzzer beep duration on each count
 
@@ -55,7 +56,7 @@ const int BEEP_MS = 50; // buzzer beep duration on each count
 // watch the serial "Dev" value for an empty gap vs. a fish in the gap
 // and set DETECT_DELTA between them. Lower it to catch fainter fish;
 // raise it if water ripple / bubbles cause false counts.
-const int DETECT_DELTA   = 300;   // min deviation from baseline to count
+const int DETECT_DELTA   = 60;   // min deviation from baseline to count
 const int DEBOUNCE_MS    = 200;   // ms to wait after a count before re-arming
 const int REARM_MS       = 80;    // gap must read clear this long before re-arming
 const float BASE_ALPHA   = 0.02;  // baseline adaptation rate (0-1, higher = faster)
@@ -67,6 +68,7 @@ TM1637Display display(CLK_PIN, DIO_PIN);
 int  count        = 0;
 bool fishInGate   = false;          // true while a fish is in the gate
 bool running      = true;
+bool irDetected   = false;          // reflective IR sensor state
 unsigned long lastCountTime = 0;
 unsigned long clearSince    = 0;    // when the gap last read clear (for re-arm)
 int  lastSensorVal = 0;
@@ -81,8 +83,18 @@ unsigned long buzzerStart = 0;
 float filteredSensor = 0;
 bool filteredSensorInit = false;
 
+void showStop() {
+  Serial.println("showStop() called");
+  const uint8_t seg[] = {0x6D, 0x78, 0x3F, 0x73}; // S t O P
+  display.setSegments(seg, 4, 0);
+}
+
 void updateDisplay(int val) {
-  display.showNumberDec(val, true, 4);
+  if (running) {
+    display.showNumberDec(val, true, 4);
+  } else {
+    showStop();
+  }
 }
 
 // ── Setup ─────────────────────────────────────────────────────
@@ -91,6 +103,7 @@ void setup() {
 
   pinMode(RESET_BTN, INPUT_PULLUP);
   pinMode(STARTSTOP_BTN, INPUT_PULLUP);
+  pinMode(IR_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
   digitalWrite(BUZZER_PIN, LOW);
 
@@ -107,7 +120,7 @@ void setup() {
 
   // ── WiFi + web dashboard ─────────────────────────────────────
   wifiSetup(RESET_BTN);
-  webServerSetup(count, fishInGate, running, lastSensorVal, updateDisplay);
+  webServerSetup(count, fishInGate, running, lastSensorVal, irDetected, updateDisplay);
 
   // ── Show IP on display ───────────────────────────────────────
   if (WiFi.isConnected()) {
@@ -136,6 +149,11 @@ void loop() {
   // ── Start/Stop button ────────────────────────────────────
   if (digitalRead(STARTSTOP_BTN) == LOW) {
     running = !running;
+    if (running) {
+      display.showNumberDec(count, true, 4);
+    } else {
+      showStop();
+    }
     Serial.println(running ? "Counting started" : "Counting stopped");
     addLog(running ? "Counting started (button)" : "Counting stopped (button)");
     delay(300);   // simple button debounce
@@ -182,6 +200,9 @@ void loop() {
   int sensorVal = (int)filteredSensor;
   lastSensorVal = sensorVal;
   unsigned long now = millis();
+
+  // ── Read reflective IR sensor ─────────────────────────────────
+  irDetected = (digitalRead(IR_PIN) == HIGH);
 
   // ── Fish detection: deviation from self-calibrating baseline ─
   // A fish in the gate shifts conductivity away from the learned
@@ -245,7 +266,9 @@ void loop() {
     Serial.print("  Baseline: ");
     Serial.print((int)baseline);
     Serial.print("  Dev: ");
-    Serial.println(deviation);
+    Serial.print(deviation);
+    Serial.print("  IR: ");
+    Serial.println(irDetected ? "OBST" : "CLR");
     lastPrint = millis();
   }
 
